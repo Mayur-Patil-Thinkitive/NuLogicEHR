@@ -17,6 +17,6 @@ namespace NuLogicEHR.Models
 
         public string? Source { get; set; }
         public int PatientId { get; set; }
-        public PatientDemographic PatientDemographic { get; set; }
+        public PatientDemographic PatientDemographic { get; set; }//add forien key
     }
 }
