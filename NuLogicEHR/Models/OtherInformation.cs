@@ -18,5 +18,7 @@ namespace NuLogicEHR.Models
         public string? Source { get; set; }
         public int PatientId { get; set; }
         public PatientDemographic PatientDemographic { get; set; }//add forien key
+        public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }
 }
