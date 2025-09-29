@@ -32,5 +32,7 @@ namespace NuLogicEHR.Models
         public string Race { get; set; }
         public string? Ethnicity { get; set; }
         public string? TreatmentType { get; set; }
+        public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }
 }

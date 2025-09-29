@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
         public string HospitalName { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedBy { get; set; }
+        public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
+
     }
 }

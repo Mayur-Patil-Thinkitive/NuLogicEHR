@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NuLogicEHR.Configurations;
@@ -11,9 +12,11 @@ using NuLogicEHR.Configurations;
 namespace NuLogicEHR.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250926102732_AddCreatetAt_columninPatientDemographic_Table")]
+    partial class AddCreatetAt_columninPatientDemographic_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,9 +34,6 @@ namespace NuLogicEHR.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CreatedBy")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Email")
                         .HasColumnType("text");
 
@@ -42,9 +42,6 @@ namespace NuLogicEHR.Migrations
 
                     b.Property<string>("LastName")
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("integer");
@@ -70,9 +67,6 @@ namespace NuLogicEHR.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CreatedBy")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime?>("EffectiveEndDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -96,9 +90,6 @@ namespace NuLogicEHR.Migrations
 
                     b.Property<string>("MemberId")
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("integer");
@@ -136,12 +127,6 @@ namespace NuLogicEHR.Migrations
 
                     b.Property<bool?>("ConsentToMessage")
                         .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("CreatedBy")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("integer");
@@ -210,9 +195,6 @@ namespace NuLogicEHR.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("CreatedBy")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
@@ -226,9 +208,6 @@ namespace NuLogicEHR.Migrations
                     b.Property<string>("MobileNumber")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("integer");
@@ -257,7 +236,7 @@ namespace NuLogicEHR.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CreatedBy")
+                    b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CurrentGender")
@@ -287,9 +266,6 @@ namespace NuLogicEHR.Migrations
 
                     b.Property<string>("MiddleName")
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Nickname")
                         .HasColumnType("text");
@@ -336,15 +312,12 @@ namespace NuLogicEHR.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("HospitalName")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("ModifiedBy")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SchemaName")
                         .IsRequired()

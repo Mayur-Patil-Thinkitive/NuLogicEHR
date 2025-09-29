@@ -29,7 +29,7 @@ namespace NuLogicEHR.Controllers
                 {
                     Id = tenant.Id,
                     HospitalName = tenant.HospitalName,
-                    CreatedAt = tenant.CreatedAt
+                    CreatedBy = tenant.CreatedBy
                 };
 
                 return StatusCode(201, new { Data = response, Message = "Tenant created successfully", StatusCode = 201 });

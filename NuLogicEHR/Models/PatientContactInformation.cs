@@ -39,5 +39,7 @@ namespace NuLogicEHR.Models
 
         [DataMember]
         public PatientDemographic PatientDemographic { get; set; }
+        public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }
 }
