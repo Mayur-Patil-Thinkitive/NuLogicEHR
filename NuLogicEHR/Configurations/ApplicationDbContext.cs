@@ -20,6 +20,7 @@ namespace NuLogicEHR.Configurations
         public DbSet<EmergencyContact> EmergencyContacts { get; set; }
         public DbSet<InsuranceInformation> InsuranceInformation { get; set; }
         public DbSet<OtherInformation> OtherInformation { get; set; }
+        public DbSet<SchedulingAppointment> SchedulingAppointments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +52,11 @@ namespace NuLogicEHR.Configurations
                 .HasOne(o => o.PatientDemographic)
                 .WithOne()
                 .HasForeignKey<OtherInformation>(o => o.PatientId);
+
+            modelBuilder.Entity<SchedulingAppointment>()
+                .HasOne(s => s.PatientDemographic)
+                .WithMany()
+                .HasForeignKey(s => s.PatientId);
         }
     }
 }

@@ -36,6 +36,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Services
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<PatientService>();
+builder.Services.AddScoped<AppointmentService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<DbContextFactory>();
 builder.Services.AddSingleton<IModelCacheKeyFactory, DynamicSchemaModelCacheKeyFactory>();
