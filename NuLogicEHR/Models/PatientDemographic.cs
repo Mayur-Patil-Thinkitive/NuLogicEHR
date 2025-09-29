@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace NuLogicEHR.Models
 {
@@ -26,8 +26,8 @@ namespace NuLogicEHR.Models
         [Required]
         public string PreferredLanguage { get; set; }
         public string? Occupation { get; set; }
-        [Required]
-        public int SSN { get; set; }
+        public int? SSN { get; set; }
+        public string? SSNNote { get; set; }
         [Required]
         public string Race { get; set; }
         public string? Ethnicity { get; set; }

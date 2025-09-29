@@ -71,7 +71,8 @@ namespace NuLogicEHR.Services
                     ""TimeZone"" TEXT,
                     ""PreferredLanguage"" TEXT NOT NULL,
                     ""Occupation"" TEXT,
-                    ""SSN"" INTEGER NOT NULL,
+                    ""SSN"" INTEGER,
+                    ""SSNNote"" TEXT,
                     ""Race"" TEXT NOT NULL,
                     ""Ethnicity"" TEXT,
                     ""TreatmentType"" TEXT,
@@ -83,7 +84,8 @@ namespace NuLogicEHR.Services
                     ""Id"" SERIAL PRIMARY KEY,
                     ""MobileNumber"" TEXT NOT NULL,
                     ""HomeNumber"" TEXT,
-                    ""Email"" TEXT NOT NULL,
+                    ""Email"" TEXT,
+                    ""EmailNote"" TEXT,
                     ""FaxNumber"" TEXT,
                     ""AddressLine1"" TEXT NOT NULL,
                     ""AddressLine2"" TEXT,
@@ -148,6 +150,23 @@ namespace NuLogicEHR.Services
                     ""Name"" TEXT NOT NULL,
                     ""DateOfBirth"" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                     ""Email"" TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SchedulingAppointments"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""AppointmentMode"" BOOLEAN NOT NULL,
+                    ""TreatmentType"" INTEGER NOT NULL,
+                    ""AppointmentType"" INTEGER NOT NULL,
+                    ""Location"" INTEGER NOT NULL,
+                    ""Date"" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    ""TimeSlot"" TEXT NOT NULL,
+                    ""SelectedForms"" TEXT,
+                    ""TransportationService"" BOOLEAN NOT NULL DEFAULT FALSE,
+                    ""Status"" TEXT NOT NULL DEFAULT 'Scheduled',
+                    ""PatientId"" INTEGER NOT NULL,
+                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);

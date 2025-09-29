@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.ViewModels
 {
@@ -6,6 +7,7 @@ namespace NuLogicEHR.ViewModels
     {
         [Required]
         public int PatientId { get; set; }
+        public int PaymentMethod { get; set; }
         public string? InsuranceType { get; set; }
         public string? InsuranceName { get; set; }
         public string? MemberId { get; set; }
