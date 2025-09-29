@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 
 namespace NuLogicEHR.Models
@@ -12,8 +12,8 @@ namespace NuLogicEHR.Models
         public string MobileNumber { get; set; }
         public string? HomeNumber { get; set; }
 
-        [Required]
-        public string Email { get; set; }
+        public string? Email { get; set; }
+        public string? EmailNote { get; set; }
 
         public string? FaxNumber { get; set; }
 

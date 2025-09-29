@@ -25,7 +25,9 @@ namespace NuLogicEHR.ViewModels
         public string PreferredLanguage { get; set; }
         public string? Occupation { get; set; }
         [Required]
-        public string SSN { get; set; }
+        public int? SSN { get; set; }
+
+        public string? SSNNote { get; set; }
         [Required]
         public string Race { get; set; }
         public string? Ethnicity { get; set; }

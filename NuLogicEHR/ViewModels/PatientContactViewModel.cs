@@ -9,8 +9,9 @@ namespace NuLogicEHR.ViewModels
         [Required]
         public string MobileNumber { get; set; }
         public string? HomeNumber { get; set; }
-        [Required]
-        public string Email { get; set; }
+        public string? Email { get; set; }
+        public string? EmailNote { get; set; }
+
         public string? FaxNumber { get; set; }
         [Required]
         public string AddressLine1 { get; set; }
