@@ -32,5 +32,7 @@ namespace NuLogicEHR.Models
         public string? InsuranceCardFilePath { get; set; }
         public int PatientId { get; set; }
         public PatientDemographic PatientDemographic { get; set; }
+        public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }
 }
