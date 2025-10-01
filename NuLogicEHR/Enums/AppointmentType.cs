@@ -4,6 +4,5 @@ namespace NuLogicEHR.Enums
     {
         FollowUp20Min = 0,
         New40Min = 1
-      
     }
 }
