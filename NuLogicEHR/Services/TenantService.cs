@@ -168,6 +168,37 @@ namespace NuLogicEHR.Services
                     ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
+                );
+
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""Providers"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""ProfileImage"" TEXT,
+                    ""FirstName"" TEXT NOT NULL,
+                    ""MiddleName"" TEXT,
+                    ""LastName"" TEXT NOT NULL,
+                    ""EmailId"" TEXT NOT NULL,
+                    ""PhoneNumber"" TEXT NOT NULL,
+                    ""OfficeFaxNumber"" TEXT,
+                    ""Gender"" TEXT NOT NULL,
+                    ""ProviderType"" INTEGER NOT NULL,
+                    ""Role"" INTEGER NOT NULL,
+                    ""NPINumber"" TEXT NOT NULL,
+                    ""GroupNPINumber"" TEXT NOT NULL,
+                    ""LicensedState"" INTEGER NOT NULL,
+                    ""LicenseNumber"" TEXT NOT NULL,
+                    ""TaxonomyNumber"" TEXT,
+                    ""WorkLocation"" INTEGER NOT NULL,
+                    ""InsuranceAccepted"" TEXT,
+                    ""YearsOfExperience"" INTEGER NOT NULL,
+                    ""DEANumber"" TEXT,
+                    ""Status"" TEXT NOT NULL,
+                    ""MapRenderingProvider"" BOOLEAN,
+                    ""KioskAccess"" BOOLEAN,
+                    ""NumericPin"" INTEGER,
+                    ""Bio"" TEXT,
+                    ""SignaturePath"" TEXT,
+                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
                 );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);
