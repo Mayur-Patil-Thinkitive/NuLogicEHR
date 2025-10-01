@@ -114,7 +114,7 @@ namespace NuLogicEHR.Services
 
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""InsuranceInformation"" (
                     ""Id"" SERIAL PRIMARY KEY,
-                    ""PaymentMethod"" BOOLEAN NOT NULL,
+                    ""PaymentMethod"" BOOLEAN,
                     ""InsuranceType"" TEXT,
                     ""InsuranceName"" TEXT,
                     ""MemberId"" TEXT,
@@ -138,8 +138,9 @@ namespace NuLogicEHR.Services
                     ""ConsentToMessage"" BOOLEAN,
                     ""PracticeLocation"" TEXT,
                     ""RegistrationDate"" TIMESTAMP WITHOUT TIME ZONE,
-                    ""Source"" TEXT,
-                    ""PatientId"" INTEGER NOT NULL,
+                    ""Source"" INTEGER,
+                     ""SoberLivingHome"" INTEGER,
+                     ""PatientId"" INTEGER NOT NULL,
                     ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")

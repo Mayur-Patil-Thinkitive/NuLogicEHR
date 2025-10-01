@@ -24,7 +24,7 @@ namespace NuLogicEHR.Controllers
                    int.TryParse(tenantIdHeader, out tenantId);
         }
 
-        [HttpPost("appointments")]
+        [HttpPost("patient-create-appointments")]
         public async Task<IActionResult> CreateAppointment([FromBody] AppointmentCreateViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -47,7 +47,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("appointments")]
+        [HttpGet("get-all-patient-appointments")]
         public async Task<IActionResult> GetAppointments()
         {
             if (!TryGetTenantId(out var tenantId))

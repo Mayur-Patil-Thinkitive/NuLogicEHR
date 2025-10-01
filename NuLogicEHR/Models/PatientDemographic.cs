@@ -23,13 +23,11 @@ namespace NuLogicEHR.Models
         public DateTime DateOfBirth { get; set; }
         public string? MaritalStatus { get; set; }
         public string? TimeZone { get; set; }
-        [Required]
-        public string PreferredLanguage { get; set; }
+        public string? PreferredLanguage { get; set; }
         public string? Occupation { get; set; }
         public int? SSN { get; set; }
         public string? SSNNote { get; set; }
-        [Required]
-        public string Race { get; set; }
+        public string? Race { get; set; }
         public string? Ethnicity { get; set; }
         public string? TreatmentType { get; set; }
         public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;

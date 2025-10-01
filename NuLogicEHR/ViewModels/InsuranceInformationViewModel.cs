@@ -7,7 +7,7 @@ namespace NuLogicEHR.ViewModels
     {
         [Required]
         public int PatientId { get; set; }
-        public int PaymentMethod { get; set; }
+        public int? PaymentMethod { get; set; }
         public string? InsuranceType { get; set; }
         public string? InsuranceName { get; set; }
         public string? MemberId { get; set; }

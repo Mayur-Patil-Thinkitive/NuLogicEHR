@@ -17,7 +17,7 @@ namespace NuLogicEHR.Services
             _logger = logger;
         }
 
-        public async Task<int> CreateAppointmentAsync(int tenantId, AppointmentCreateViewModel dto)
+        public async Task<int> CreateAppointmentAsync(int tenantId, AppointmentCreateViewModel get)
         {
             try
             {
@@ -25,15 +25,15 @@ namespace NuLogicEHR.Services
 
                 var appointment = new SchedulingAppointment
                 {
-                    AppointmentMode = dto.AppointmentMode,
-                    TreatmentType = dto.TreatmentType,
-                    AppointmentType = dto.AppointmentType,
-                    Location = dto.Location,
-                    Date = dto.Date,
-                    TimeSlot = dto.TimeSlot,
-                    SelectedForms = JsonSerializer.Serialize(dto.SelectedForms),
-                    TransportationService = dto.TransportationService,
-                    PatientId = dto.PatientId
+                    AppointmentMode = get.AppointmentMode,
+                    TreatmentType = get.TreatmentType,
+                    AppointmentType = get.AppointmentType,
+                    Location = get.Location,
+                    Date = DateTime.SpecifyKind(get.Date, DateTimeKind.Utc),
+                    TimeSlot = get.TimeSlot,
+                    SelectedForms = JsonSerializer.Serialize(get.SelectedForms),
+                    TransportationService = get.TransportationService,
+                    PatientId = get.PatientId
                 };
 
                 context.SchedulingAppointments.Add(appointment);
@@ -67,9 +67,10 @@ namespace NuLogicEHR.Services
                     AppointmentType = a.AppointmentType.ToString(),
                     Location = a.Location.ToString(),
                     Date = a.Date,
+                    DateFormatted = a.Date.ToString("MM-dd-yyyy"),//Modify fix format mm/dd/yy format
                     TimeSlot = a.TimeSlot,
                     SelectedForms = string.IsNullOrEmpty(a.SelectedForms) ? new List<string>() :
-                        JsonSerializer.Deserialize<List<FormType>>(a.SelectedForms).Select(f => f.ToString()).ToList(),
+                    JsonSerializer.Deserialize<List<FormType>>(a.SelectedForms).Select(f => f.ToString()).ToList(),
                     TransportationService = a.TransportationService
                 }).ToList();
             }
