@@ -47,7 +47,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("get-patient-appointments")]
+        [HttpGet("get-all-patient-appointments")]
         public async Task<IActionResult> GetAppointments()
         {
             if (!TryGetTenantId(out var tenantId))

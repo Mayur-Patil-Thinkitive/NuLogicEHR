@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using NuLogicEHR.Configurations;
 using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
@@ -41,7 +41,7 @@ namespace NuLogicEHR.Services
                     GenderAtBirth = request.GenderAtBirth,
                     CurrentGender = request.CurrentGender,
                     Pronouns = request.Pronouns,
-                    DateOfBirth = request.DateOfBirth,
+                    DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth, DateTimeKind.Utc), //  This line was changed
                     MaritalStatus = request.MaritalStatus,
                     TimeZone = request.TimeZone,
                     PreferredLanguage = request.PreferredLanguage,
@@ -140,8 +140,8 @@ namespace NuLogicEHR.Services
                     PlanType = request.PlanType,
                     GroupId = request.GroupId,
                     GroupName = request.GroupName,
-                    EffectiveStartDate = request.EffectiveStartDate,
-                    EffectiveEndDate = request.EffectiveEndDate,
+                    EffectiveStartDate = request.EffectiveStartDate.HasValue ? DateTime.SpecifyKind(request.EffectiveStartDate.Value, DateTimeKind.Utc) : null,
+                    EffectiveEndDate = request.EffectiveEndDate.HasValue ? DateTime.SpecifyKind(request.EffectiveEndDate.Value, DateTimeKind.Utc) : null,
                     PatientRelationshipWithInsured = request.PatientRelationshipWithInsured,
                     InsuranceCardFilePath = request.InsuranceCardFilePath,
                     PatientId = request.PatientId
@@ -170,6 +170,7 @@ namespace NuLogicEHR.Services
                     PracticeLocation = request.PracticeLocation,
                     RegistrationDate = request.RegistrationDate ?? DateTime.UtcNow,
                     Source = request.Source,
+                    SoberLivingHome = request.SoberLivingHome,
                     PatientId = request.PatientId
                 };
 
@@ -244,62 +245,139 @@ namespace NuLogicEHR.Services
             }
         }
 
-        public async Task<int> ImportPatientsFromCsvAsync(int tenantId, Stream csvStream)
+        public async Task<(int ImportedCount, List<string> Errors)> ImportPatientsFromCsvAsync(int tenantId, Stream csvStream)
         {
+            var validationErrors = new List<string>();
+            var importedCount = 0;
+
             try
             {
                 using var context = await GetContextAsync(tenantId);
                 var repository = new PatientRepository(context);
-                
+
                 using var reader = new StreamReader(csvStream);
                 using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-                
-                var records = csv.GetRecords<PatientCsvImportViewModel>().ToList();
-                int importedCount = 0;
+                csv.Context.Configuration.HeaderValidated = null;
+                csv.Context.Configuration.MissingFieldFound = null;
 
-                foreach (var record in records)
+                // Read header to check for missing columns
+                csv.Read();
+                csv.ReadHeader();
+                var headerRecord = csv.HeaderRecord;
+
+                // Define required and optional columns
+                var requiredColumns = new List<string>
+        {
+            "FirstName", "LastName", "DateOfBirth", "GenderAtBirth", "CurrentGender"
+        };
+                var optionalColumns = new List<string>
+        {
+            "SSN", "TreatmentType", "InsuranceName", "MemberId"
+        };
+                var allExpectedColumns = requiredColumns.Concat(optionalColumns).ToList();
+
+                // Check for missing columns
+                var missingColumns = allExpectedColumns
+                    .Where(col => !headerRecord.Any(h => h.Equals(col, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+
+                if (missingColumns.Any())
                 {
-                    // Create demographic
-                    var demographic = new PatientDemographic
-                    {
-                        FirstName = record.FirstName,
-                        LastName = record.LastName,
-                        DateOfBirth = DateTime.SpecifyKind(record.DateOfBirth, DateTimeKind.Utc),
-                        GenderAtBirth = record.GenderAtBirth,
-                        CurrentGender = record.CurrentGender,
-                        SSN = record.SSN,
-                        TreatmentType = record.TreatmentType,
-                        PreferredLanguage = "English",
-                        Race = "Not Specified"
-                    };
-
-                    var patientId = await repository.AddPatientDemographicAsync(demographic);
-
-                    // Create insurance if data provided
-                    if (!string.IsNullOrEmpty(record.InsuranceType) || !string.IsNullOrEmpty(record.InsuranceName))
-                    {
-                        var insurance = new InsuranceInformation
-                        {
-                            PaymentMethod = null,
-                            InsuranceType = record.InsuranceType,
-                            InsuranceName = record.InsuranceName,
-                            MemberId = record.MemberId,
-                            PlanName = record.PlanName,
-                            PlanType = record.PlanType,
-                            GroupId = record.GroupId,
-                            GroupName = record.GroupName,
-                            EffectiveStartDate = record.EffectiveStartDate.HasValue ? DateTime.SpecifyKind(record.EffectiveStartDate.Value, DateTimeKind.Utc) : null,
-                            EffectiveEndDate = record.EffectiveEndDate.HasValue ? DateTime.SpecifyKind(record.EffectiveEndDate.Value, DateTimeKind.Utc) : null,
-                            PatientId = patientId
-                        };
-
-                        await repository.AddInsuranceInformationAsync(insurance);
-                    }
-
-                    importedCount++;
+                    validationErrors.Add($"Missing columns in CSV: {string.Join(", ", missingColumns)}");
                 }
 
-                return importedCount;
+                var records = csv.GetRecords<PatientCsvImportViewModel>().ToList();
+
+                for (int i = 0; i < records.Count; i++)
+                {
+                    var record = records[i];
+                    var rowNumber = i + 2; // CSV rows start at 2 (header is row 1)
+                    var rowErrors = new List<string>();
+
+                    try
+                    {
+                        // Collect all validation errors for this row
+                        if (string.IsNullOrWhiteSpace(record.FirstName))
+                            rowErrors.Add("FirstName is required");
+
+                        if (string.IsNullOrWhiteSpace(record.LastName))
+                            rowErrors.Add("LastName is required");
+
+                        if (string.IsNullOrWhiteSpace(record.GenderAtBirth))
+                            rowErrors.Add("GenderAtBirth is required");
+
+                        if (string.IsNullOrWhiteSpace(record.CurrentGender))
+                            rowErrors.Add("CurrentGender is required");
+
+                        if (!string.IsNullOrWhiteSpace(record.InsuranceName) &&
+                            string.IsNullOrWhiteSpace(record.MemberId))
+                            rowErrors.Add("MemberId is required when InsuranceName is provided");
+
+                        if (!string.IsNullOrWhiteSpace(record.MemberId) &&
+                            string.IsNullOrWhiteSpace(record.InsuranceName))
+                            rowErrors.Add("InsuranceName is required when MemberId is provided");
+
+                        // If there are validation errors, add them all and skip this row
+                        if (rowErrors.Any())
+                        {
+                            validationErrors.Add($"Row {rowNumber}: {string.Join("; ", rowErrors)}");
+                            _logger.LogWarning("Skipping row {RowNumber} due to validation errors: {Errors}",
+                                rowNumber, string.Join("; ", rowErrors));
+                            continue;
+                        }
+
+                        // Handle missing DateOfBirth with warning message
+                        DateTime dobToSave;
+                        if (record.DateOfBirth == default)
+                        {
+                            dobToSave = DateTime.SpecifyKind(new DateTime(1900, 1, 1), DateTimeKind.Utc);
+                            validationErrors.Add($"Row {rowNumber}: DateOfBirth is missing, using default date (1900-01-01)");
+                            _logger.LogWarning("Row {RowNumber}: DateOfBirth missing, using default date", rowNumber);
+                        }
+                        else
+                        {
+                            dobToSave = DateTime.SpecifyKind(record.DateOfBirth, DateTimeKind.Utc);
+                        }
+
+                        // Save to DB
+                        var demographic = new PatientDemographic
+                        {
+                            FirstName = record.FirstName,
+                            LastName = record.LastName,
+                            DateOfBirth = dobToSave,
+                            GenderAtBirth = record.GenderAtBirth,
+                            CurrentGender = record.CurrentGender,
+                            SSN = record.SSN,
+                            TreatmentType = record.TreatmentType,
+                            PreferredLanguage = "null",
+                            Race = "Not Specified"
+                        };
+
+                        var patientId = await repository.AddPatientDemographicAsync(demographic);
+
+                        if (!string.IsNullOrEmpty(record.InsuranceName))
+                        {
+                            var insurance = new InsuranceInformation
+                            {
+                                PaymentMethod = null,
+                                MemberId = record.MemberId,
+                                InsuranceName = record.InsuranceName,
+                                PatientId = patientId
+                            };
+
+                            await repository.AddInsuranceInformationAsync(insurance);
+                        }
+
+                        importedCount++;
+                    }
+                    catch (Exception exRow)
+                    {
+                        validationErrors.Add($"Row {rowNumber}: {exRow.Message}");
+                        _logger.LogWarning(exRow, "Error processing row {RowNumber}", rowNumber);
+                    }
+                }
+
+                return (importedCount, validationErrors);
             }
             catch (Exception ex)
             {
@@ -307,5 +385,6 @@ namespace NuLogicEHR.Services
                 throw;
             }
         }
+
     }
 }

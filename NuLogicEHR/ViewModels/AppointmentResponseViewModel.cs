@@ -11,6 +11,7 @@ namespace NuLogicEHR.ViewModels
         public string AppointmentType { get; set; }
         public string Location { get; set; }
         public DateTime Date { get; set; }
+        public string DateFormatted { get; set; }
         public string TimeSlot { get; set; }
         public List<string> SelectedForms { get; set; }
         public bool TransportationService { get; set; }
