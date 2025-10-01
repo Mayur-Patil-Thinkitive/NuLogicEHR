@@ -21,6 +21,7 @@ namespace NuLogicEHR.Configurations
         public DbSet<InsuranceInformation> InsuranceInformation { get; set; }
         public DbSet<OtherInformation> OtherInformation { get; set; }
         public DbSet<SchedulingAppointment> SchedulingAppointments { get; set; }
+        public DbSet<Provider> Providers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
