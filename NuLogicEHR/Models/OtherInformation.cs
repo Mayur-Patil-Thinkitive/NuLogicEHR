@@ -15,7 +15,9 @@ namespace NuLogicEHR.Models
 
         public DateTime? RegistrationDate { get; set; }
 
-        public string? Source { get; set; }
+        public Source? Source { get; set; }
+        public SoberLivingHome? SoberLivingHome { get; set; }
+
         public int PatientId { get; set; }
         public PatientDemographic PatientDemographic { get; set; }//add forien key
         public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;

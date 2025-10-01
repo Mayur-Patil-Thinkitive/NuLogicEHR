@@ -5,6 +5,8 @@ using NuLogicEHR.Repository;
 using NuLogicEHR.ViewModels;
 using NuLogicEHR.Enums;
 using System.ComponentModel.DataAnnotations;
+using CsvHelper;
+using System.Globalization;
 
 namespace NuLogicEHR.Services
 {
@@ -48,7 +50,7 @@ namespace NuLogicEHR.Services
                     SSNNote = request.SSNNote,
                     Race = request.Race,
                     Ethnicity = request.Ethnicity,
-                    TreatmentType = request.TreatmentType
+                    TreatmentType = request.TreatmentType.HasValue ? ((TreatmentType)request.TreatmentType.Value).ToString() : null
                 };
 
                 return await repository.AddPatientDemographicAsync(demographic);
@@ -239,6 +241,70 @@ namespace NuLogicEHR.Services
             if (hasSSN && request.SSN.Value.ToString().Length != 9)
             {
                 throw new ArgumentException("SSN must be a 9-digit number");
+            }
+        }
+
+        public async Task<int> ImportPatientsFromCsvAsync(int tenantId, Stream csvStream)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var repository = new PatientRepository(context);
+                
+                using var reader = new StreamReader(csvStream);
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                
+                var records = csv.GetRecords<PatientCsvImportViewModel>().ToList();
+                int importedCount = 0;
+
+                foreach (var record in records)
+                {
+                    // Create demographic
+                    var demographic = new PatientDemographic
+                    {
+                        FirstName = record.FirstName,
+                        LastName = record.LastName,
+                        DateOfBirth = DateTime.SpecifyKind(record.DateOfBirth, DateTimeKind.Utc),
+                        GenderAtBirth = record.GenderAtBirth,
+                        CurrentGender = record.CurrentGender,
+                        SSN = record.SSN,
+                        TreatmentType = record.TreatmentType,
+                        PreferredLanguage = "English",
+                        Race = "Not Specified"
+                    };
+
+                    var patientId = await repository.AddPatientDemographicAsync(demographic);
+
+                    // Create insurance if data provided
+                    if (!string.IsNullOrEmpty(record.InsuranceType) || !string.IsNullOrEmpty(record.InsuranceName))
+                    {
+                        var insurance = new InsuranceInformation
+                        {
+                            PaymentMethod = null,
+                            InsuranceType = record.InsuranceType,
+                            InsuranceName = record.InsuranceName,
+                            MemberId = record.MemberId,
+                            PlanName = record.PlanName,
+                            PlanType = record.PlanType,
+                            GroupId = record.GroupId,
+                            GroupName = record.GroupName,
+                            EffectiveStartDate = record.EffectiveStartDate.HasValue ? DateTime.SpecifyKind(record.EffectiveStartDate.Value, DateTimeKind.Utc) : null,
+                            EffectiveEndDate = record.EffectiveEndDate.HasValue ? DateTime.SpecifyKind(record.EffectiveEndDate.Value, DateTimeKind.Utc) : null,
+                            PatientId = patientId
+                        };
+
+                        await repository.AddInsuranceInformationAsync(insurance);
+                    }
+
+                    importedCount++;
+                }
+
+                return importedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing patients from CSV for Tenant {TenantId}", tenantId);
+                throw;
             }
         }
     }

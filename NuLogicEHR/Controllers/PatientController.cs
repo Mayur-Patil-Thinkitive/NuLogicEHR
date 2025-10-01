@@ -185,5 +185,36 @@ namespace NuLogicEHR.Controllers
                 return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
             }
         }
+
+        [HttpPost("import-patients")]
+        public async Task<IActionResult> ImportPatients(IFormFile csvFile)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            if (csvFile == null || csvFile.Length == 0)
+                return BadRequest(new { Message = "CSV file is required", StatusCode = 400 });
+
+            if (!csvFile.FileName.EndsWith(".csv") && !csvFile.FileName.EndsWith(".xlsx"))
+                return BadRequest(new { Message = "Only CSV and Excel (.xlsx) files are allowed", StatusCode = 400 });
+
+            try
+            {
+                using var stream = csvFile.OpenReadStream();
+                var importedCount = await _patientService.ImportPatientsFromCsvAsync(tenantId, stream);
+                
+                return Ok(new
+                {
+                    Data = new { ImportedCount = importedCount },
+                    Message = $"Successfully imported {importedCount} patients",
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing patients from CSV for Tenant {TenantId}", tenantId);
+                return StatusCode(500, new { Message = $"Import failed: {ex.Message}", StatusCode = 500 });
+            }
+        }
     }
 }

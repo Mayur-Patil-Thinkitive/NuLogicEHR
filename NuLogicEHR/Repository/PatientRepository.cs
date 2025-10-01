@@ -63,7 +63,23 @@ namespace NuLogicEHR.Repository
                 Demographic = demographic,
                 Contact = contact,
                 EmergencyContacts = emergencyContacts,
-                Insurance = insurance,
+                Insurance = insurance == null ? null : new
+                {
+                    insurance.Id,
+                    PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
+                    insurance.InsuranceType,
+                    insurance.InsuranceName,
+                    insurance.MemberId,
+                    insurance.PlanName,
+                    insurance.PlanType,
+                    insurance.GroupId,
+                    insurance.GroupName,
+                    insurance.EffectiveStartDate,
+                    insurance.EffectiveEndDate,
+                    insurance.PatientRelationshipWithInsured,
+                    insurance.InsuranceCardFilePath,
+                    insurance.PatientId
+                },
                 OtherInformation = otherInfo
             };
         }

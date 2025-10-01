@@ -8,7 +8,7 @@ namespace NuLogicEHR.Models
         [Key]
         public int Id { get; set; }
 
-        public bool PaymentMethod { get; set; }
+        public bool? PaymentMethod { get; set; }
 
         public string? InsuranceType { get; set; }
 
