@@ -1,3 +1,5 @@
+using NuLogicEHR.Enums;
+
 namespace NuLogicEHR.Models
 {
     public class Tenant

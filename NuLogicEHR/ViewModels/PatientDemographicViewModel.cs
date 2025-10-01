@@ -24,15 +24,12 @@ namespace NuLogicEHR.ViewModels
         [Required]
         public string PreferredLanguage { get; set; }
         public string? Occupation { get; set; }
-        [Required]
         public int? SSN { get; set; }
-
         public string? SSNNote { get; set; }
         [Required]
         public string Race { get; set; }
         public string? Ethnicity { get; set; }
-        public string? TreatmentType { get; set; }
+        public int? TreatmentType { get; set; }
         public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
-
     }
 }
