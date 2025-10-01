@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NuLogicEHR.Services;
 using NuLogicEHR.ViewModels;
+using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.Controllers
 {
@@ -156,7 +157,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("get-patient-details")]
         public async Task<IActionResult> GetPatient()
         {
             try
@@ -186,7 +187,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("import-patients")]
+        [HttpPost("import-patient-records")]
         public async Task<IActionResult> ImportPatients(IFormFile csvFile)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -201,12 +202,20 @@ namespace NuLogicEHR.Controllers
             try
             {
                 using var stream = csvFile.OpenReadStream();
-                var importedCount = await _patientService.ImportPatientsFromCsvAsync(tenantId, stream);
-                
+                var (importedCount, errors) = await _patientService.ImportPatientsFromCsvAsync(tenantId, stream);
+
+                var message = errors.Count > 0
+                    ? $"Imported {importedCount} patients with {errors.Count} errors"
+                    : $"Successfully imported {importedCount} patients";
                 return Ok(new
                 {
-                    Data = new { ImportedCount = importedCount },
-                    Message = $"Successfully imported {importedCount} patients",
+                    Data = new
+                    {
+                        ImportedCount = importedCount,
+                        ErrorCount = errors.Count,
+                        Errors = errors
+                    },
+                    Message = message,
                     StatusCode = 200
                 });
             }

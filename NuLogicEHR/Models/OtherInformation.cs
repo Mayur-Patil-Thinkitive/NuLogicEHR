@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.Models
 {

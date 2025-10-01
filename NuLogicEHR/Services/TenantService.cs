@@ -140,7 +140,7 @@ namespace NuLogicEHR.Services
                     ""RegistrationDate"" TIMESTAMP WITHOUT TIME ZONE,
                     ""Source"" INTEGER,
                      ""SoberLivingHome"" INTEGER,
-                    ""PatientId"" INTEGER NOT NULL,
+                     ""PatientId"" INTEGER NOT NULL,
                     ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
