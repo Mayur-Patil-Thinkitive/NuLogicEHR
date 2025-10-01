@@ -6,6 +6,5 @@ namespace NuLogicEHR.Enums
         NonMat = 1,
         Psych = 2,
         Sti = 3
-
     }
 }

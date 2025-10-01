@@ -8,7 +8,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new NuLogicEHR.Configurations.DateOnlyJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NuLogicEHR.Configurations.NullableDateOnlyJsonConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
@@ -37,6 +43,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<AppointmentService>();
+builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<DbContextFactory>();
 builder.Services.AddSingleton<IModelCacheKeyFactory, DynamicSchemaModelCacheKeyFactory>();
