@@ -1,3 +1,4 @@
+using NuLogicEHR.Common.Exceptions;
 using NuLogicEHR.Configurations;
 using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
@@ -17,16 +18,20 @@ namespace NuLogicEHR.Services
             {
                 if (provider.KioskAccess == true && !provider.NumericPin.HasValue)
                 {
-                    throw new InvalidOperationException("4-digit PIN is required when Kiosk Access is enabled");
+                    throw new ProviderValidationException("4-digit PIN is required when Kiosk Access is enabled");
                 }
 
                 using var context = await GetContextAsync(tenantId);
                 var repository = new SettingRepository(context);
                 return await repository.CreateAsync(provider);
             }
+            catch (ProviderValidationException) // rethrow as is
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                // Log the exception (you can inject ILogger and log it here)
+                // Log here
                 throw new ApplicationException("An error occurred while creating the provider.", ex);
             }
         }
