@@ -1,22 +1,23 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using NuLogicEHR.Services;
+using NuLogicEHR.Common.Exceptions;
 using NuLogicEHR.Models;
+using NuLogicEHR.Services;
 
 namespace NuLogicEHR.Controllers
 {
-    [Route("api/v1/settings")]
+    [Route("api/v1")]
     [ApiController]
-    public class Settings : ControllerBase
+    public class SettingsController : ControllerBase
     {
         private readonly SettingService _settingService;
 
-        public Settings(SettingService settingService)
+        public SettingsController(SettingService settingService)
         {
             _settingService = settingService;
         }
 
-        [HttpPost("provider")]
+        [HttpPost("create-provider")]
         public async Task<IActionResult> CreateProvider([FromBody] Provider provider)
         {
             try
@@ -28,10 +29,22 @@ namespace NuLogicEHR.Controllers
                 }
 
                 var providerId = await _settingService.CreateProviderAsync(tenantId, provider);
-                return StatusCode(201, new { Data = new { ProviderId = providerId }, Message = "Provider created successfully", StatusCode = 201 });
+
+                return StatusCode(201, new
+                {
+                    Data = new { ProviderId = providerId },
+                    Message = "Provider created successfully",
+                    StatusCode = 201
+                });
             }
             catch (Exception ex)
             {
+                // If it is your custom validation exception, return 400
+                if (ex is ProviderValidationException)
+                {
+                    return BadRequest(new { Message = ex.Message, StatusCode = 400 });
+                }
+
                 return StatusCode(500, new { Message = ex.Message, StatusCode = 500 });
             }
         }
