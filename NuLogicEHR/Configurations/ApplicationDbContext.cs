@@ -28,7 +28,7 @@ namespace NuLogicEHR.Configurations
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema(_schema);
-            
+
             // Tenant configuration (only for public schema)
             if (_schema == "public")
             {
@@ -66,6 +66,10 @@ namespace NuLogicEHR.Configurations
                 .HasOne(sc => sc.Staff)
                 .WithMany(s => s.Credentials)
                 .HasForeignKey(sc => sc.StaffId);
+
+            modelBuilder.Entity<InsuranceInformation>()
+               .Property(e => e.PatientRelationshipWithInsured)
+               .HasConversion<string>();
         }
     }
 }
