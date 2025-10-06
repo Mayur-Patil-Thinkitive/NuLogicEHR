@@ -97,28 +97,36 @@ namespace NuLogicEHR.Services
             }
         }
 
-        public async Task<int> CreateEmergencyContactAsync(int tenantId, EmergencyContactModelViewModel request)
+        public async Task<List<int>> CreateEmergencyContactsAsync(int tenantId, List<EmergencyContactModelViewModel> requests)
         {
             try
             {
                 using var context = await GetContextAsync(tenantId);
                 var repository = new PatientRepository(context);
 
-                var emergency = new EmergencyContact
-                {
-                    RelationshipWithPatient = request.RelationshipWithPatient,
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    PhoneNumber = request.PhoneNumber,
-                    Email = request.Email,
-                    PatientId = request.PatientId
-                };
+                var contactIds = new List<int>();
 
-                return await repository.AddEmergencyContactAsync(emergency);
+                foreach (var request in requests)
+                {
+                    var emergency = new EmergencyContact
+                    {
+                        PatientId = request.PatientId,
+                        RelationshipWithPatient = request.RelationshipWithPatient,
+                        FirstName = request.FirstName,
+                        LastName = request.LastName,
+                        PhoneNumber = request.PhoneNumber,
+                        Email = request.Email
+                    };
+
+                    var id = await repository.AddEmergencyContactAsync(emergency);
+                    contactIds.Add(id);
+                }
+
+                return contactIds;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating emergency contact for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating emergency contacts for Tenant {TenantId}", tenantId);
                 throw;
             }
         }
@@ -143,7 +151,9 @@ namespace NuLogicEHR.Services
                     EffectiveStartDate = request.EffectiveStartDate.HasValue ? DateTime.SpecifyKind(request.EffectiveStartDate.Value, DateTimeKind.Utc) : null,
                     EffectiveEndDate = request.EffectiveEndDate.HasValue ? DateTime.SpecifyKind(request.EffectiveEndDate.Value, DateTimeKind.Utc) : null,
                     PatientRelationshipWithInsured = request.PatientRelationshipWithInsured,
-                    InsuranceCardFilePath = request.InsuranceCardFilePath,
+                    InsuranceCard = request.InsuranceCard,
+                    InsuranceCard1 = request.InsuranceCard1,
+
                     PatientId = request.PatientId
                 };
 
@@ -227,7 +237,7 @@ namespace NuLogicEHR.Services
         private void ValidateSSNOrNote(PatientDemographicViewModel request)
         {
             bool hasSSN = request.SSN.HasValue && request.SSN.Value > 0;
-            bool hasSSNNote = !string.IsNullOrWhiteSpace(request.SSNNote) && request.SSNNote != "null";
+            bool hasSSNNote = !string.IsNullOrWhiteSpace(request.SSNNote) && request.SSNNote != null;
 
             if (!hasSSN && !hasSSNNote)
             {

@@ -17,7 +17,8 @@ namespace NuLogicEHR.ViewModels
         public string? GroupName { get; set; }
         public DateTime? EffectiveStartDate { get; set; }
         public DateTime? EffectiveEndDate { get; set; }
-        public string? PatientRelationshipWithInsured { get; set; }
-        public string? InsuranceCardFilePath { get; set; }
+        public PatientRelationshipWithInsured? PatientRelationshipWithInsured { get; set; }
+        public string? InsuranceCard { get; set; }
+        public string? InsuranceCard1 { get; set; }
     }
 }

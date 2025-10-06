@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using NuLogicEHR.Services;
 using NuLogicEHR.ViewModels;
-using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.Controllers
 {
@@ -83,26 +82,32 @@ namespace NuLogicEHR.Controllers
         }
 
         [HttpPost("patient-emergency-contact")]
-        public async Task<IActionResult> CreateEmergencyContact([FromBody] EmergencyContactModelViewModel dto)
+        public async Task<IActionResult> CreateEmergencyContact([FromBody] List<EmergencyContactModelViewModel> request)
         {
             if (!TryGetTenantId(out var tenantId))
                 return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
 
+            if (request == null || !request.Any())
+                return BadRequest(new { Message = "Request body is required and cannot be empty", StatusCode = 400 });
+
+            if (!ModelState.IsValid)
+                return BadRequest(new { Message = "Validation failed", Errors = ModelState, StatusCode = 400 });
+
             try
             {
-                var emergencyId = await _patientService.CreateEmergencyContactAsync(tenantId, dto);
-                _logger.LogInformation("Emergency contact created with ID {EmergencyContactId} for Tenant {TenantId}", emergencyId, tenantId);
+                var contactIds = await _patientService.CreateEmergencyContactsAsync(tenantId, request);
+                _logger.LogInformation("Emergency contacts created for Tenant {TenantId}", tenantId);
 
                 return StatusCode(201, new
                 {
-                    Data = new { EmergencyContactId = emergencyId },
-                    Message = "Emergency contact created successfully",
+                    Data = new { ContactIds = contactIds },
+                    Message = "Emergency contacts created successfully",
                     StatusCode = 201
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating emergency contact for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating emergency contacts for Tenant {TenantId}", tenantId);
                 return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
             }
         }
