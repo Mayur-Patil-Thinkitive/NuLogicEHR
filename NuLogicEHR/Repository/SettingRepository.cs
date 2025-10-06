@@ -29,5 +29,17 @@ namespace NuLogicEHR.Repository
         {
             return await _context.Providers.ToListAsync();
         }
+
+        public async Task<int> CreateStaffAsync(Staff staff)
+        {
+            _context.Staff.Add(staff);
+            await _context.SaveChangesAsync();
+            return staff.Id;
+        }
+
+        public async Task<IEnumerable<Staff>> GetAllStaffAsync()
+        {
+            return await _context.Staff.Include(s => s.Credentials).ToListAsync();
+        }
     }
 }

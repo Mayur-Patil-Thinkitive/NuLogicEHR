@@ -1,6 +1,6 @@
 namespace NuLogicEHR.Enums
 {
-    public enum RoleType
+    public enum ProviderRoleType
     {
         Provider=0,
         SupervisorProvider =1
