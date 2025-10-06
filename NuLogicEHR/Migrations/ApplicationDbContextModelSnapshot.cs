@@ -85,7 +85,10 @@ namespace NuLogicEHR.Migrations
                     b.Property<string>("GroupName")
                         .HasColumnType("text");
 
-                    b.Property<string>("InsuranceCardFilePath")
+                    b.Property<string>("InsuranceCard")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InsuranceCard1")
                         .HasColumnType("text");
 
                     b.Property<string>("InsuranceName")
@@ -106,7 +109,7 @@ namespace NuLogicEHR.Migrations
                     b.Property<string>("PatientRelationshipWithInsured")
                         .HasColumnType("text");
 
-                    b.Property<bool>("PaymentMethod")
+                    b.Property<bool?>("PaymentMethod")
                         .HasColumnType("boolean");
 
                     b.Property<string>("PlanName")
@@ -152,8 +155,11 @@ namespace NuLogicEHR.Migrations
                     b.Property<DateTime?>("RegistrationDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Source")
-                        .HasColumnType("text");
+                    b.Property<int?>("SoberLivingHome")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Source")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -300,7 +306,6 @@ namespace NuLogicEHR.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PreferredLanguage")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ProfileImagePath")
@@ -310,7 +315,6 @@ namespace NuLogicEHR.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Race")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int?>("SSN")
@@ -331,6 +335,109 @@ namespace NuLogicEHR.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PatientDemographics", "public");
+                });
+
+            modelBuilder.Entity("NuLogicEHR.Models.Provider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DEANumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmailId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GroupNPINumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("InsuranceAccepted")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("KioskAccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("KioskPin")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LicenseNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("LicensedState")
+                        .HasColumnType("integer");
+
+                    b.Property<bool?>("MapRenderingProvider")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MiddleName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ModifiedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NPINumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OfficeFaxNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileImage")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProviderType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Signature")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TaxonomyNumber")
+                        .HasColumnType("text");
+
+                    b.Property<int>("WorkLocation")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("YearsOfExperience")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Providers", "public");
                 });
 
             modelBuilder.Entity("NuLogicEHR.Models.SchedulingAppointment", b =>
@@ -381,6 +488,142 @@ namespace NuLogicEHR.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("SchedulingAppointments", "public");
+                });
+
+            modelBuilder.Entity("NuLogicEHR.Models.Staff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BankRoutingNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BillerId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BillingLicenseNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CAQHProviderId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClearinghouseId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ERAEFTStatus")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmailId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IssuingState")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("KioskAccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("KioskPin")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MailingAddressLine1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MailingAddressLine2")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MedicareProviderDoc")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("MedicareProviderNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MiddleName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NationalProviderId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayerAssignedId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileImage")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Signature")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TaxIdNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Staff", "public");
+                });
+
+            modelBuilder.Entity("NuLogicEHR.Models.StaffCredential", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CredentialNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("CredentialType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ModifiedBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffId");
+
+                    b.ToTable("StaffCredentials", "public");
                 });
 
             modelBuilder.Entity("NuLogicEHR.Models.Tenant", b =>
@@ -463,6 +706,22 @@ namespace NuLogicEHR.Migrations
                         .IsRequired();
 
                     b.Navigation("PatientDemographic");
+                });
+
+            modelBuilder.Entity("NuLogicEHR.Models.StaffCredential", b =>
+                {
+                    b.HasOne("NuLogicEHR.Models.Staff", "Staff")
+                        .WithMany("Credentials")
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("NuLogicEHR.Models.Staff", b =>
+                {
+                    b.Navigation("Credentials");
                 });
 #pragma warning restore 612, 618
         }
