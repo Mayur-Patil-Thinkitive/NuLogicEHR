@@ -31,7 +31,7 @@ namespace NuLogicEHR.Models
         [Required]
         public ProviderType ProviderType { get; set; }
         [Required]
-        public RoleType Role { get; set; }
+        public ProviderRoleType Role { get; set; }
 
         [Required]
         public string NPINumber { get; set; }
@@ -52,12 +52,13 @@ namespace NuLogicEHR.Models
         [Required]
         public string Status { get; set; }
         public bool? MapRenderingProvider { get; set; }
+
         public bool? KioskAccess { get; set; }
 
         [Range(1000, 9999, ErrorMessage = "PIN must be a 4-digit number")]
-        public int? NumericPin { get; set; }
+        public int? KioskPin { get; set; }
         public string? Bio { get; set; }
-        public string? SignaturePath { get; set; }
+        public string? Signature { get; set; }
         public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }

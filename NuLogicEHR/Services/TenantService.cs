@@ -194,11 +194,54 @@ namespace NuLogicEHR.Services
                     ""Status"" TEXT NOT NULL,
                     ""MapRenderingProvider"" BOOLEAN,
                     ""KioskAccess"" BOOLEAN,
-                    ""NumericPin"" INTEGER,
+                    ""KioskPin"" INTEGER,
                     ""Bio"" TEXT,
-                    ""SignaturePath"" TEXT,
+                    ""Signature"" TEXT,
                     ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                );
+
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""Staff"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""ProfileImage"" TEXT,
+                    ""Role"" INTEGER NOT NULL,
+                    ""FirstName"" TEXT NOT NULL,
+                    ""MiddleName"" TEXT,
+                    ""LastName"" TEXT NOT NULL,
+                    ""EmailId"" TEXT NOT NULL,
+                    ""PhoneNumber"" TEXT NOT NULL,
+                    ""KioskAccess"" BOOLEAN NOT NULL DEFAULT FALSE,
+                    ""KioskPin"" INTEGER,
+                    ""MailingAddressLine1"" TEXT,
+                    ""MailingAddressLine2"" TEXT,
+                    ""BillerId"" TEXT,
+                    ""TaxIdNumber"" INTEGER,
+                    ""NationalProviderId"" TEXT,
+                    ""BillingLicenseNumber"" TEXT,
+                    ""IssuingState"" TEXT,
+                    ""MedicareProviderNumber"" INTEGER,
+                    ""MedicareProviderDoc"" TEXT,
+                    ""ClearinghouseId"" TEXT,
+                    ""ERAEFTStatus"" TEXT,
+                    ""PayerAssignedId"" TEXT,
+                    ""BankRoutingNumber"" TEXT,
+                    ""AccountNumber"" TEXT,
+                    ""CAQHProviderId"" TEXT,
+                    ""LastLogin"" TIMESTAMP WITHOUT TIME ZONE,
+                    ""Status"" TEXT NOT NULL DEFAULT 'Active',
+                    ""Signature"" TEXT,
+                    ""CreatedAt"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""ModifiedAt"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                );
+
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""StaffCredentials"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""CredentialType"" INTEGER NOT NULL,
+                    ""CredentialNumber"" TEXT NOT NULL,
+                    ""StaffId"" INTEGER NOT NULL,
+                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    FOREIGN KEY (""StaffId"") REFERENCES ""{schemaName}"".""Staff""(""Id"") ON DELETE CASCADE
                 );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);
