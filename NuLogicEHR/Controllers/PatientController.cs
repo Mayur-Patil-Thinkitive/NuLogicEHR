@@ -4,7 +4,7 @@ using NuLogicEHR.ViewModels;
 
 namespace NuLogicEHR.Controllers
 {
-    [Route("api/v1")]
+    [Route("api/[controller]")]
     [ApiController]
     public class PatientController : ControllerBase
     {
@@ -31,7 +31,7 @@ namespace NuLogicEHR.Controllers
             return true;
         }
 
-        [HttpPost("patient-demographic")]
+        [HttpPost("Patient-Demographic")]
         public async Task<IActionResult> CreateDemographic([FromBody] PatientDemographicViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -56,7 +56,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-contact-information")]
+        [HttpPost("Patient-Contact-Information")]
         public async Task<IActionResult> CreateContact([FromBody] PatientContactViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -81,7 +81,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-emergency-contact")]
+        [HttpPost("Patient-Emergency-Contact")]
         public async Task<IActionResult> CreateEmergencyContact([FromBody] List<EmergencyContactModelViewModel> request)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -112,7 +112,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-insurance-information")]
+        [HttpPost("Patient-Insurance-Information")]
         public async Task<IActionResult> CreateInsurance([FromBody] InsuranceInformationViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -137,7 +137,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-other-information")]
+        [HttpPost("Patient-Other-Information")]
         public async Task<IActionResult> CreateOtherInformation([FromBody] OtherInformationViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -162,7 +162,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("get-patient-details")]
+        [HttpGet("Get-Patient-Details")]
         public async Task<IActionResult> GetPatient()
         {
             try
@@ -192,7 +192,25 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("import-patient-records")]
+        [HttpGet("Get-All-Patients")]
+        public async Task<IActionResult> GetAllPatients()
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            try
+            {
+                var patients = await _patientService.GetAllPatientsAsync(tenantId);
+                return Ok(new { Data = patients, Message = "Patients retrieved successfully", StatusCode = 200 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all patients for Tenant {TenantId}", tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }            
+
+        [HttpPost("Import-Patient-Records")]
         public async Task<IActionResult> ImportPatients(IFormFile csvFile)
         {
             if (!TryGetTenantId(out var tenantId))

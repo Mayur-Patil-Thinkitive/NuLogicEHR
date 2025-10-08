@@ -147,13 +147,6 @@ namespace NuLogicEHR.Services
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
-                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""Patients"" (
-                    ""Id"" SERIAL PRIMARY KEY,
-                    ""Name"" TEXT NOT NULL,
-                    ""DateOfBirth"" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                    ""Email"" TEXT NOT NULL
-                );
-
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SchedulingAppointments"" (
                     ""Id"" SERIAL PRIMARY KEY,
                     ""AppointmentMode"" BOOLEAN NOT NULL,
@@ -243,7 +236,27 @@ namespace NuLogicEHR.Services
                     ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
                     FOREIGN KEY (""StaffId"") REFERENCES ""{schemaName}"".""Staff""(""Id"") ON DELETE CASCADE
-                );";
+                );
+                
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SoberLivingHomes"" (
+                ""Id"" SERIAL PRIMARY KEY,
+                ""SoberLivingHomeName"" TEXT NOT NULL,
+                ""ContactPersonName"" TEXT NOT NULL,
+                ""EmailId"" TEXT NOT NULL,
+                ""ContactNumber"" TEXT NOT NULL,
+                ""FaxNumber"" TEXT,
+                ""RegistrationNumber"" TEXT,
+                ""Transportation"" BOOLEAN,
+                ""Status"" BOOLEAN,
+                ""AddressLine1"" TEXT,
+                ""AddressLine2"" TEXT,
+                ""City"" TEXT NOT NULL,
+                ""State"" TEXT,
+                ""Country"" TEXT,
+                ""ZipCode"" TEXT,
+                ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+               );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);
             await tablesCmd.ExecuteNonQueryAsync();

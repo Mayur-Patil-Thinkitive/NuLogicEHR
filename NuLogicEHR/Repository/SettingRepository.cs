@@ -41,5 +41,16 @@ namespace NuLogicEHR.Repository
         {
             return await _context.Staff.Include(s => s.Credentials).ToListAsync();
         }
+        public async Task<int> CreateSoberLivingHomeAsync(SoberLivingHome soberLivingHome)
+        {
+            _context.SoberLivingHomes.Add(soberLivingHome);
+            await _context.SaveChangesAsync();
+            return soberLivingHome.Id;
+        }
+
+        public async Task<IEnumerable<SoberLivingHome>> GetAllSoberLivingHomesAsync()
+        {
+            return await _context.SoberLivingHomes.ToListAsync();
+        }
     }
 }
