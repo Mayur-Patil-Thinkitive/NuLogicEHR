@@ -4,7 +4,7 @@ using NuLogicEHR.ViewModels;
 
 namespace NuLogicEHR.Controllers
 {
-    [Route("api/v1")]
+    [Route("api/[controller]")]
     [ApiController]
     public class AppointmentController : ControllerBase
     {
@@ -24,7 +24,7 @@ namespace NuLogicEHR.Controllers
                    int.TryParse(tenantIdHeader, out tenantId);
         }
 
-        [HttpPost("patient-create-appointments")]
+        [HttpPost("Patient-Create-Appointments")]
         public async Task<IActionResult> CreateAppointment([FromBody] AppointmentCreateViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -47,7 +47,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("get-all-patient-appointments")]
+        [HttpGet("Get-All-Patient-Appointments")]
         public async Task<IActionResult> GetAppointments()
         {
             if (!TryGetTenantId(out var tenantId))

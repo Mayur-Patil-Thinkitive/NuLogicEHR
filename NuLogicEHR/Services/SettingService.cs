@@ -4,6 +4,7 @@ using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
 using NuLogicEHR.DTOs;
 using NuLogicEHR.Enums;
+using NuLogicEHR.ViewModels;
 
 namespace NuLogicEHR.Services
 {
@@ -160,6 +161,73 @@ namespace NuLogicEHR.Services
             catch (Exception ex)
             {
                 throw new ApplicationException("An error occurred while fetching staff.", ex);
+            }
+        }
+        public async Task<int> CreateSoberLivingHomeAsync(int tenantId, SoberLivingHomeCreateViewModel req)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var repository = new SettingRepository(context);
+
+                var soberLivingHome = new SoberLivingHome
+                {
+                    SoberLivingHomeName = req.SoberLivingHomeName,
+                    ContactPersonName = req.ContactPersonName,
+                    EmailId = req.EmailId,
+                    ContactNumber = req.ContactNumber,
+                    FaxNumber = req.FaxNumber,
+                    RegistrationNumber = req.RegistrationNumber,
+                    Transportation = req.Transportation,
+                    Status = req.Status,
+                    AddressLine1 = req.AddressLine1,
+                    AddressLine2 = req.AddressLine2,
+                    City = req.City,
+                    State = req.State,
+                    Country = req.Country,
+                    ZipCode = req.ZipCode
+                };
+
+                return await repository.CreateSoberLivingHomeAsync(soberLivingHome);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("An error occurred while creating sober living home.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<SoberLivingHomeResponseViewModel>> GetAllSoberLivingHomesAsync(int tenantId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var repository = new SettingRepository(context);
+                var homes = await repository.GetAllSoberLivingHomesAsync();
+
+                return homes.Select(h => new SoberLivingHomeResponseViewModel
+                {
+                    Id = h.Id,
+                    SoberLivingHomeName = h.SoberLivingHomeName,
+                    ContactPersonName = h.ContactPersonName,
+                    EmailId = h.EmailId,
+                    ContactNumber = h.ContactNumber,
+                    FaxNumber = h.FaxNumber,
+                    RegistrationNumber = h.RegistrationNumber,
+                    Transportation = h.Transportation,
+                    Status = h.Status,
+                    AddressLine1 = h.AddressLine1,
+                    AddressLine2 = h.AddressLine2,
+                    City = h.City,
+                    State = h.State,
+                    Country = h.Country,
+                    ZipCode = h.ZipCode,
+                    CreatedBy = h.CreatedBy,
+                    ModifiedBy = h.ModifiedBy
+                });
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("An error occurred while fetching sober living homes.", ex);
             }
         }
     }

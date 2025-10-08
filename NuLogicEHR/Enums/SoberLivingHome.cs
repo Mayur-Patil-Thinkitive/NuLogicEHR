@@ -1,6 +1,6 @@
 namespace NuLogicEHR.Enums
 {
-    public enum SoberLivingHome
+    public enum SoberLivingHomeType
     {
         HavenRecoveryHouse = 0,
         SerenityLivingCenter = 1,

@@ -192,6 +192,105 @@ namespace NuLogicEHR.Services
                 throw;
             }
         }
+        public async Task<List<PatientCompleteViewModel>> GetAllPatientsAsync(int tenantId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var repository = new PatientRepository(context);
+                var demographics = await context.PatientDemographics.ToListAsync();
+                var result = new List<PatientCompleteViewModel>();
+
+                foreach (var demographic in demographics)
+                {
+                    var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == demographic.Id);
+                    var emergencyContact = await context.EmergencyContacts.FirstOrDefaultAsync(e => e.PatientId == demographic.Id);
+                    var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == demographic.Id);
+                    var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == demographic.Id);
+
+                    result.Add(new PatientCompleteViewModel
+                    {
+                        PatientId = demographic.Id,
+                        Demographic = new PatientDemographicData
+                        {
+                            ProfileImagePath = demographic.ProfileImagePath,
+                            FirstName = demographic.FirstName,
+                            MiddleName = demographic.MiddleName,
+                            LastName = demographic.LastName,
+                            Suffix = demographic.Suffix,
+                            Nickname = demographic.Nickname,
+                            GenderAtBirth = demographic.GenderAtBirth,
+                            CurrentGender = demographic.CurrentGender,
+                            Pronouns = demographic.Pronouns,
+                            DateOfBirth = demographic.DateOfBirth,
+                            MaritalStatus = demographic.MaritalStatus,
+                            TimeZone = demographic.TimeZone,
+                            PreferredLanguage = demographic.PreferredLanguage,
+                            Occupation = demographic.Occupation,
+                            SSN = demographic.SSN,
+                            SSNNote = demographic.SSNNote,
+                            Race = demographic.Race,
+                            Ethnicity = demographic.Ethnicity,
+                            TreatmentType = demographic.TreatmentType
+                        },
+                        Contact = contact == null ? null : new PatientContactData
+                        {
+                            MobileNumber = contact.MobileNumber,
+                            HomeNumber = contact.HomeNumber,
+                            Email = contact.Email,
+                            EmailNote = contact.EmailNote,
+                            FaxNumber = contact.FaxNumber,
+                            AddressLine1 = contact.AddressLine1,
+                            AddressLine2 = contact.AddressLine2,
+                            City = contact.City,
+                            State = contact.State,
+                            Country = contact.Country,
+                            ZipCode = contact.ZipCode
+                        },
+                        EmergencyContact = emergencyContact == null ? null : new EmergencyContactData
+                        {
+                            RelationshipWithPatient = emergencyContact.RelationshipWithPatient,
+                            FirstName = emergencyContact.FirstName,
+                            LastName = emergencyContact.LastName,
+                            PhoneNumber = emergencyContact.PhoneNumber,
+                            Email = emergencyContact.Email
+                        },
+                        Insurance = insurance == null ? null : new InsuranceData
+                        {
+                            PaymentMethod = insurance.PaymentMethod.HasValue && insurance.PaymentMethod.Value,
+                            InsuranceType = insurance.InsuranceType,
+                            InsuranceName = insurance.InsuranceName,
+                            MemberId = insurance.MemberId,
+                            PlanName = insurance.PlanName,
+                            PlanType = insurance.PlanType,
+                            GroupId = insurance.GroupId,
+                            GroupName = insurance.GroupName,
+                            EffectiveStartDate = insurance.EffectiveStartDate,
+                            EffectiveEndDate = insurance.EffectiveEndDate,
+                            PatientRelationshipWithInsured = insurance.PatientRelationshipWithInsured?.ToString(),
+                            InsuranceCard = insurance.InsuranceCard,
+                            InsuranceCard1 = insurance.InsuranceCard1
+                        },
+                        OtherInformation = otherInfo == null ? null : new OtherInfoData
+                        {
+                            ConsentToEmail = otherInfo.ConsentToEmail ?? false,
+                            ConsentToMessage = otherInfo.ConsentToMessage ?? false,
+                            PracticeLocation = otherInfo.PracticeLocation,
+                            RegistrationDate = otherInfo.RegistrationDate,
+                            Source = otherInfo.Source?.ToString(),
+                            SoberLivingHome = otherInfo.SoberLivingHome?.ToString()
+                        }
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching all patients for Tenant {TenantId}", tenantId);
+                throw;
+            }
+        }        
 
         public async Task<object> GetPatientByIdAsync(int tenantId, int patientId)
         {

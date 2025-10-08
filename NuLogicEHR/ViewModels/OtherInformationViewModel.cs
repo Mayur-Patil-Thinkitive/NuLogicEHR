@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using NuLogicEHR.Enums;
+using NuLogicEHR.Models;
 
 namespace NuLogicEHR.ViewModels
 {
@@ -12,6 +13,6 @@ namespace NuLogicEHR.ViewModels
         public string? PracticeLocation { get; set; }
         public DateTime? RegistrationDate { get; set; }
         public Source? Source { get; set; }
-        public SoberLivingHome? SoberLivingHome { get; set; }
+        public SoberLivingHomeType? SoberLivingHome { get; set; }
     }
 }

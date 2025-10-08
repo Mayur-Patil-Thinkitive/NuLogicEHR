@@ -14,7 +14,6 @@ namespace NuLogicEHR.Configurations
 
         public string Schema => _schema;
         public DbSet<Tenant> Tenants { get; set; }
-        public DbSet<Patient> Patients { get; set; }
         public DbSet<PatientDemographic> PatientDemographics { get; set; }
         public DbSet<PatientContactInformation> PatientContactInformation { get; set; }
         public DbSet<EmergencyContact> EmergencyContacts { get; set; }
@@ -24,6 +23,7 @@ namespace NuLogicEHR.Configurations
         public DbSet<Provider> Providers { get; set; }
         public DbSet<Staff> Staff { get; set; }
         public DbSet<StaffCredential> StaffCredentials { get; set; }
+        public DbSet<SoberLivingHome> SoberLivingHomes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
