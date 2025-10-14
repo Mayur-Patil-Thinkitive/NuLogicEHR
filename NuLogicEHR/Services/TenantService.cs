@@ -27,20 +27,33 @@ namespace NuLogicEHR.Services
 
             var schemaName = hospitalName.ToLower().Replace(" ", "_").Replace("-", "_");
 
-            var tenant = new Tenant
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                HospitalName = hospitalName,
-                SchemaName = schemaName,
-                CreatedBy = DateTime.UtcNow
-            };
+                var tenant = new Tenant
+                {
+                    HospitalName = hospitalName,
+                    SchemaName = schemaName,
+                    CreatedBy = DateTime.UtcNow
+                };
 
-            _context.Tenants.Add(tenant);
-            await _context.SaveChangesAsync();
+                _context.Tenants.Add(tenant);
+                await _context.SaveChangesAsync();
 
-            await CreateSchemaAsync(schemaName);
-            _tenantSchemaCache.TryAdd(tenant.Id, schemaName);
+                await CreateSchemaAsync(schemaName);
+                
+                await transaction.CommitAsync();
+                _tenantSchemaCache.TryAdd(tenant.Id, schemaName);
 
-            return tenant;
+                return tenant;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                await DropSchemaIfExistsAsync(schemaName);
+                await ResetTenantSequenceAsync();
+                throw;
+            }
         }
 
         private async Task CreateSchemaAsync(string schemaName)
@@ -260,6 +273,42 @@ namespace NuLogicEHR.Services
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);
             await tablesCmd.ExecuteNonQueryAsync();
+        }
+
+        private async Task DropSchemaIfExistsAsync(string schemaName)
+        {
+            try
+            {
+                var connectionString = _configuration.GetConnectionString("DefaultConnection");
+                using var connection = new Npgsql.NpgsqlConnection(connectionString);
+                await connection.OpenAsync();
+                
+                using var dropCmd = new Npgsql.NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{schemaName}\" CASCADE", connection);
+                await dropCmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
+
+        private async Task ResetTenantSequenceAsync()
+        {
+            try
+            {
+                var connectionString = _configuration.GetConnectionString("DefaultConnection");
+                using var connection = new Npgsql.NpgsqlConnection(connectionString);
+                await connection.OpenAsync();
+                
+                using var resetCmd = new Npgsql.NpgsqlCommand(
+                    "SELECT setval('\"Tenants_Id_seq\"', (SELECT COALESCE(MAX(\"Id\"), 0) FROM \"Tenants\"))", 
+                    connection);
+                await resetCmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Ignore sequence reset errors
+            }
         }
 
         public async Task<string> GetSchemaByTenantIdAsync(int tenantId)
