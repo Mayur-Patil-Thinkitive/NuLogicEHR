@@ -109,7 +109,11 @@ namespace NuLogicEHR.Controllers
                 }
 
                 var staff = await _settingService.GetAllStaffAsync(tenantId);
-                return Ok(new { Data = staff, Message = "Staff retrieved successfully", StatusCode = 200 });
+                
+                if (!staff.Any())
+                {
+                    return NotFound(new { Message = "No staff found", StatusCode = 404 });
+                }                return Ok(new { Data = staff, Message = "Staff retrieved successfully", StatusCode = 200 });
             }
             catch (Exception ex)
             {

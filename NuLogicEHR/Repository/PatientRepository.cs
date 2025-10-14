@@ -47,39 +47,14 @@ namespace NuLogicEHR.Repository
             return other.Id;
         }
 
-        public async Task<object> GetPatientByIdAsync(int patientId)
+        public async Task DeletePatientAsync(int patientId)
         {
-            var demographic = await _context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
-            if (demographic == null) throw new InvalidOperationException("Patient not found");
+            var patient = await _context.PatientDemographics.FindAsync(patientId);
+            if (patient == null)
+                throw new InvalidOperationException($"Patient with ID {patientId} not found");
 
-            var contact = await _context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
-            var emergencyContacts = await _context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
-            var insurance = await _context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
-            var otherInfo = await _context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
-
-            return new
-            {
-                Demographic = demographic,
-                Contact = contact,
-                EmergencyContacts = emergencyContacts,
-                Insurance = insurance == null ? null : new
-                {
-                    insurance.Id,
-                    PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
-                    insurance.InsuranceType,
-                    insurance.InsuranceName,
-                    insurance.MemberId,
-                    insurance.PlanName,
-                    insurance.PlanType,
-                    insurance.GroupId,
-                    insurance.GroupName,
-                    insurance.EffectiveStartDate,
-                    insurance.EffectiveEndDate,
-                    insurance.PatientRelationshipWithInsured,
-                    insurance.PatientId
-                },
-                OtherInformation = otherInfo
-            };
+            _context.PatientDemographics.Remove(patient);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NuLogicEHR.Configurations;
 using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
@@ -97,7 +97,7 @@ namespace NuLogicEHR.Services
             }
         }
 
-        public async Task<List<int>> CreateEmergencyContactsAsync(int tenantId, List<EmergencyContactModelViewModel> requests)
+        public async Task<List<int>> CreateEmergencyContactsAsync(int tenantId, BulkEmergencyContactViewModel request)
         {
             try
             {
@@ -106,16 +106,16 @@ namespace NuLogicEHR.Services
 
                 var contactIds = new List<int>();
 
-                foreach (var request in requests)
+                foreach (var emergencyContact in request.EmergencyContacts)
                 {
                     var emergency = new EmergencyContact
                     {
                         PatientId = request.PatientId,
-                        RelationshipWithPatient = request.RelationshipWithPatient,
-                        FirstName = request.FirstName,
-                        LastName = request.LastName,
-                        PhoneNumber = request.PhoneNumber,
-                        Email = request.Email
+                        RelationshipWithPatient = emergencyContact.RelationshipWithPatient,
+                        FirstName = emergencyContact.FirstName,
+                        LastName = emergencyContact.LastName,
+                        PhoneNumber = emergencyContact.PhoneNumber,
+                        Email = emergencyContact.Email
                     };
 
                     var id = await repository.AddEmergencyContactAsync(emergency);
@@ -192,19 +192,34 @@ namespace NuLogicEHR.Services
                 throw;
             }
         }
-        public async Task<List<PatientCompleteViewModel>> GetAllPatientsAsync(int tenantId)
+        public async Task<object> GetAllPatientsAsync(int tenantId, string? search = null, int page = 1, int pageSize = 10)
         {
             try
             {
                 using var context = await GetContextAsync(tenantId);
                 var repository = new PatientRepository(context);
-                var demographics = await context.PatientDemographics.ToListAsync();
+                var query = context.PatientDemographics.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(p =>
+                        p.FirstName.Contains(search) ||
+                        p.LastName.Contains(search) ||
+                        (p.MiddleName != null && p.MiddleName.Contains(search)) ||
+                        (p.Nickname != null && p.Nickname.Contains(search)));
+                }
+
+                var totalCount = await query.CountAsync();
+                var demographics = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
                 var result = new List<PatientCompleteViewModel>();
 
                 foreach (var demographic in demographics)
                 {
                     var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == demographic.Id);
-                    var emergencyContact = await context.EmergencyContacts.FirstOrDefaultAsync(e => e.PatientId == demographic.Id);
+                    var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == demographic.Id).ToListAsync();
                     var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == demographic.Id);
                     var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == demographic.Id);
 
@@ -247,14 +262,14 @@ namespace NuLogicEHR.Services
                             Country = contact.Country,
                             ZipCode = contact.ZipCode
                         },
-                        EmergencyContact = emergencyContact == null ? null : new EmergencyContactData
+                        EmergencyContacts = emergencyContacts?.Select(ec => new EmergencyContactData
                         {
-                            RelationshipWithPatient = emergencyContact.RelationshipWithPatient,
-                            FirstName = emergencyContact.FirstName,
-                            LastName = emergencyContact.LastName,
-                            PhoneNumber = emergencyContact.PhoneNumber,
-                            Email = emergencyContact.Email
-                        },
+                            RelationshipWithPatient = ec.RelationshipWithPatient,
+                            FirstName = ec.FirstName,
+                            LastName = ec.LastName,
+                            PhoneNumber = ec.PhoneNumber,
+                            Email = ec.Email
+                        }).ToList(),
                         Insurance = insurance == null ? null : new InsuranceData
                         {
                             PaymentMethod = insurance.PaymentMethod.HasValue && insurance.PaymentMethod.Value,
@@ -283,22 +298,62 @@ namespace NuLogicEHR.Services
                     });
                 }
 
-                return result;
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                return new
+                {
+                    Data = result,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = totalPages,
+                    Message = "Patients retrieved successfully",
+                    StatusCode = 200
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching all patients for Tenant {TenantId}", tenantId);
                 throw;
             }
-        }        
+        }
 
         public async Task<object> GetPatientByIdAsync(int tenantId, int patientId)
         {
             try
             {
                 using var context = await GetContextAsync(tenantId);
-                var repository = new PatientRepository(context);
-                return await repository.GetPatientByIdAsync(patientId);
+                var demographic = await context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
+                if (demographic == null) throw new InvalidOperationException("Patient not found");
+
+                var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
+                var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
+                var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
+                var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
+
+                return new
+                {
+                    Demographic = demographic,
+                    Contact = contact,
+                    EmergencyContacts = emergencyContacts,
+                    Insurance = insurance == null ? null : new
+                    {
+                        insurance.Id,
+                        PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
+                        insurance.InsuranceType,
+                        insurance.InsuranceName,
+                        insurance.MemberId,
+                        insurance.PlanName,
+                        insurance.PlanType,
+                        insurance.GroupId,
+                        insurance.GroupName,
+                        insurance.EffectiveStartDate,
+                        insurance.EffectiveEndDate,
+                        insurance.PatientRelationshipWithInsured,
+                        insurance.PatientId
+                    },
+                    OtherInformation = otherInfo
+                };
             }
             catch (Exception ex)
             {
@@ -491,6 +546,137 @@ namespace NuLogicEHR.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error importing patients from CSV for Tenant {TenantId}", tenantId);
+                throw;
+            }
+        }
+        public async Task DeletePatientAsync(int tenantId, int patientId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+
+                var patient = await context.PatientDemographics.FindAsync(patientId);
+                if (patient == null)
+                    throw new InvalidOperationException($"Patient with ID {patientId} not found");
+
+                // Delete related records first (cascade delete)
+                var contacts = context.PatientContactInformation.Where(c => c.PatientId == patientId);
+                var emergencyContacts = context.EmergencyContacts.Where(e => e.PatientId == patientId);
+                var insurance = context.InsuranceInformation.Where(i => i.PatientId == patientId);
+                var otherInfo = context.OtherInformation.Where(o => o.PatientId == patientId);
+
+                context.PatientContactInformation.RemoveRange(contacts);
+                context.EmergencyContacts.RemoveRange(emergencyContacts);
+                context.InsuranceInformation.RemoveRange(insurance);
+                context.OtherInformation.RemoveRange(otherInfo);
+                context.PatientDemographics.Remove(patient);
+
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
+                throw;
+            }
+        }
+        public async Task<object?> GetPatientsByIdAsync(int tenantId, int patientId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+
+                var demographic = await context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
+                if (demographic == null) return null;
+
+                var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
+                var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
+                var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
+                var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
+
+                var result = new PatientCompleteViewModel
+                {
+                    PatientId = demographic.Id,
+                    Demographic = new PatientDemographicData
+                    {
+                        ProfileImagePath = demographic.ProfileImagePath,
+                        FirstName = demographic.FirstName,
+                        MiddleName = demographic.MiddleName,
+                        LastName = demographic.LastName,
+                        Suffix = demographic.Suffix,
+                        Nickname = demographic.Nickname,
+                        GenderAtBirth = demographic.GenderAtBirth,
+                        CurrentGender = demographic.CurrentGender,
+                        Pronouns = demographic.Pronouns,
+                        DateOfBirth = demographic.DateOfBirth,
+                        MaritalStatus = demographic.MaritalStatus,
+                        TimeZone = demographic.TimeZone,
+                        PreferredLanguage = demographic.PreferredLanguage,
+                        Occupation = demographic.Occupation,
+                        SSN = demographic.SSN,
+                        SSNNote = demographic.SSNNote,
+                        Race = demographic.Race,
+                        Ethnicity = demographic.Ethnicity,
+                        TreatmentType = demographic.TreatmentType
+                    },
+                    Contact = contact == null ? null : new PatientContactData
+                    {
+                        MobileNumber = contact.MobileNumber,
+                        HomeNumber = contact.HomeNumber,
+                        Email = contact.Email,
+                        EmailNote = contact.EmailNote,
+                        FaxNumber = contact.FaxNumber,
+                        AddressLine1 = contact.AddressLine1,
+                        AddressLine2 = contact.AddressLine2,
+                        City = contact.City,
+                        State = contact.State,
+                        Country = contact.Country,
+                        ZipCode = contact.ZipCode
+                    },
+                    EmergencyContacts = emergencyContacts?.Select(ec => new EmergencyContactData
+                    {
+                        RelationshipWithPatient = ec.RelationshipWithPatient,
+                        FirstName = ec.FirstName,
+                        LastName = ec.LastName,
+                        PhoneNumber = ec.PhoneNumber,
+                        Email = ec.Email
+                    }).ToList(),
+                    Insurance = insurance == null ? null : new InsuranceData
+                    {
+                        PaymentMethod = insurance.PaymentMethod.HasValue && insurance.PaymentMethod.Value,
+                        InsuranceType = insurance.InsuranceType,
+                        InsuranceName = insurance.InsuranceName,
+                        MemberId = insurance.MemberId,
+                        PlanName = insurance.PlanName,
+                        PlanType = insurance.PlanType,
+                        GroupId = insurance.GroupId,
+                        GroupName = insurance.GroupName,
+                        EffectiveStartDate = insurance.EffectiveStartDate,
+                        EffectiveEndDate = insurance.EffectiveEndDate,
+                        PatientRelationshipWithInsured = insurance.PatientRelationshipWithInsured?.ToString(),
+                        InsuranceCard = insurance.InsuranceCard,
+                        InsuranceCard1 = insurance.InsuranceCard1
+                    },
+                    OtherInformation = otherInfo == null ? null : new OtherInfoData
+                    {
+                        ConsentToEmail = otherInfo.ConsentToEmail ?? false,
+                        ConsentToMessage = otherInfo.ConsentToMessage ?? false,
+                        PracticeLocation = otherInfo.PracticeLocation,
+                        RegistrationDate = otherInfo.RegistrationDate,
+                        Source = otherInfo.Source?.ToString(),
+                        SoberLivingHome = otherInfo.SoberLivingHome?.ToString()
+                    }
+                };
+
+                return new
+                {
+                    Data = result,
+                    Message = "Patient retrieved successfully",
+                    StatusCode = 200
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
                 throw;
             }
         }

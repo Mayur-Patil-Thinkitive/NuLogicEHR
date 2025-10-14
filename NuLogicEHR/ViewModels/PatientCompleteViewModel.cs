@@ -5,7 +5,7 @@ namespace NuLogicEHR.ViewModels
         public int PatientId { get; set; }
         public PatientDemographicData? Demographic { get; set; }
         public PatientContactData? Contact { get; set; }
-        public EmergencyContactData? EmergencyContact { get; set; }
+        public List<EmergencyContactData>? EmergencyContacts { get; set; }
         public InsuranceData? Insurance { get; set; }
         public OtherInfoData? OtherInformation { get; set; }
     }
