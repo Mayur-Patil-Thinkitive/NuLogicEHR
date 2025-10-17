@@ -13,12 +13,10 @@ namespace NuLogicEHR.Models
         public string? PracticeLocation { get; set; }
 
         public DateTime? RegistrationDate { get; set; }
-
         public Source? Source { get; set; }
         public SoberLivingHome? SoberLivingHome { get; set; }
-
         public int PatientId { get; set; }
-        public PatientDemographic PatientDemographic { get; set; }//add forien key
+        public PatientDemographic PatientDemographic { get; set; }
         public DateTime? CreatedBy { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedBy { get; set; } = DateTime.UtcNow;
     }
