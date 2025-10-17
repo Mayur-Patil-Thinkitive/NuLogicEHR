@@ -10,7 +10,6 @@ namespace NuLogicEHR.Models
 
         public bool? ConsentToEmail { get; set; }
         public bool? ConsentToMessage { get; set; }
-
         public string? PracticeLocation { get; set; }
 
         public DateTime? RegistrationDate { get; set; }
