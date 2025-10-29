@@ -9,6 +9,6 @@ namespace NuLogicEHR.Repository
         Task<int> AddEmergencyContactAsync(EmergencyContact emergency);
         Task<int> AddInsuranceInformationAsync(InsuranceInformation insurance);
         Task<int> AddOtherInformationAsync(OtherInformation other);
-        Task<object> GetPatientByIdAsync(int patientId);
+        Task DeletePatientAsync(int patientId);
     }
 }

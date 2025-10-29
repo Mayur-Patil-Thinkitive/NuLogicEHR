@@ -15,7 +15,7 @@ namespace NuLogicEHR.Controllers
             _jwtService = jwtService;
         }
 
-        [HttpPost("login")]
+        [HttpPost("Login")]
         public IActionResult Login([FromBody] LoginRequestViewModel request)
         {
             // Add your authentication logic here

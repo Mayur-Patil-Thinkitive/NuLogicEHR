@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using NuLogicEHR.Services;
 using NuLogicEHR.ViewModels;
+using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.Controllers
 {
-    [Route("api/v1")]
+    [Route("api/[controller]")]
     [ApiController]
     public class PatientController : ControllerBase
     {
@@ -31,7 +32,7 @@ namespace NuLogicEHR.Controllers
             return true;
         }
 
-        [HttpPost("patient-demographic")]
+        [HttpPost("Patient-Demographic")]
         public async Task<IActionResult> CreateDemographic([FromBody] PatientDemographicViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -56,7 +57,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-contact-information")]
+        [HttpPost("Patient-Contact-Information")]
         public async Task<IActionResult> CreateContact([FromBody] PatientContactViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -81,14 +82,14 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-emergency-contact")]
-        public async Task<IActionResult> CreateEmergencyContact([FromBody] List<EmergencyContactModelViewModel> request)
+        [HttpPost("Patient-Emergency-Contact")]
+        public async Task<IActionResult> CreateEmergencyContact([FromBody] BulkEmergencyContactViewModel request)
         {
             if (!TryGetTenantId(out var tenantId))
                 return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
 
-            if (request == null || !request.Any())
-                return BadRequest(new { Message = "Request body is required and cannot be empty", StatusCode = 400 });
+            if (request == null || request.EmergencyContacts == null || !request.EmergencyContacts.Any())
+                return BadRequest(new { Message = "Request body with emergency contacts is required", StatusCode = 400 });
 
             if (!ModelState.IsValid)
                 return BadRequest(new { Message = "Validation failed", Errors = ModelState, StatusCode = 400 });
@@ -112,7 +113,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-insurance-information")]
+        [HttpPost("Patient-Insurance-Information")]
         public async Task<IActionResult> CreateInsurance([FromBody] InsuranceInformationViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -137,7 +138,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("patient-other-information")]
+        [HttpPost("Patient-Other-Information")]
         public async Task<IActionResult> CreateOtherInformation([FromBody] OtherInformationViewModel dto)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -162,7 +163,7 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("get-patient-details")]
+        [HttpGet("Get-Patient-Details")]
         public async Task<IActionResult> GetPatient()
         {
             try
@@ -192,7 +193,50 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpPost("import-patient-records")]
+        [HttpGet("Get-All-Patients")]
+        public async Task<IActionResult> GetAllPatients([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+            try
+            {
+                var result = await _patientService.GetAllPatientsAsync(tenantId, search, page, pageSize);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all patients for Tenant {TenantId}", tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
+
+        [HttpGet("Get-Patient-ById")]
+        public async Task<IActionResult> GetPatientById([FromQuery] int patientId)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            try
+            {
+                var result = await _patientService.GetPatientByIdAsync(tenantId, patientId);
+                if (result == null)
+                    return NotFound(new { Message = $"Patient with Id {patientId} not found", StatusCode = 404 });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
+
+
+
+        [HttpPost("Import-Patient-Records")]
         public async Task<IActionResult> ImportPatients(IFormFile csvFile)
         {
             if (!TryGetTenantId(out var tenantId))
@@ -228,6 +272,31 @@ namespace NuLogicEHR.Controllers
             {
                 _logger.LogError(ex, "Error importing patients from CSV for Tenant {TenantId}", tenantId);
                 return StatusCode(500, new { Message = $"Import failed: {ex.Message}", StatusCode = 500 });
+            }
+        }
+
+        [HttpDelete("Delete-Patient")]
+        public async Task<IActionResult> DeletePatient([FromQuery] int patientId)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            if (patientId <= 0)
+                return BadRequest(new { Message = "PatientId is required and must be greater than 0", StatusCode = 400 });
+
+            try
+            {
+                await _patientService.DeletePatientAsync(tenantId, patientId);
+                return Ok(new { Message = "Patient deleted successfully", StatusCode = 200 });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { Message = ex.Message, StatusCode = 404 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
             }
         }
     }

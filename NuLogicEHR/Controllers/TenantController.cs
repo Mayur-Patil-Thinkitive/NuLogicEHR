@@ -15,7 +15,7 @@ namespace NuLogicEHR.Controllers
             _tenantService = tenantService;
         }
 
-        [HttpPost]
+        [HttpPost("Create-Tenant")]
         public async Task<IActionResult> CreateTenant([FromBody] TenantCreateViewModel dto)
         {
             try

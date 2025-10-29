@@ -8,7 +8,6 @@ namespace NuLogicEHR.Models
     {
         [Key]
         public int Id { get; set; }
-
         public string? ProfileImage { get; set; }
 
         [Required]
@@ -52,7 +51,6 @@ namespace NuLogicEHR.Models
         [Required]
         public string Status { get; set; }
         public bool? MapRenderingProvider { get; set; }
-
         public bool? KioskAccess { get; set; }
 
         [Range(1000, 9999, ErrorMessage = "PIN must be a 4-digit number")]
