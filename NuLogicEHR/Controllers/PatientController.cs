@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NuLogicEHR.Services;
 using NuLogicEHR.ViewModels;
+using NuLogicEHR.Enums;
 
 namespace NuLogicEHR.Controllers
 {

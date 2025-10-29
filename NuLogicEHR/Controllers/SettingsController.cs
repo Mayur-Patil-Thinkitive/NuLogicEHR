@@ -166,5 +166,30 @@ namespace NuLogicEHR.Controllers
                 return StatusCode(500, new { Message = ex.Message, StatusCode = 500 });
             }
         }
+
+        [HttpPut("Update-Sober-Living-Home/{Id}")]
+        public async Task<IActionResult> UpdateSoberLivingHome(int Id, [FromBody] SoberLivingHomeCreateViewModel req)
+        {
+            try
+            {
+                if (!Request.Headers.TryGetValue("TenantId", out var tenantIdHeader) ||
+                    !int.TryParse(tenantIdHeader, out var tenantId))
+                {
+                    return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+                }
+
+                await _settingService.UpdateSoberLivingHomeAsync(tenantId, Id, req);
+
+                return Ok(new
+                {
+                    Message = "Sober Living Home updated successfully",
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message, StatusCode = 500 });
+            }
+        }
     }
 }

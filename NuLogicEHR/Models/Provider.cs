@@ -8,7 +8,6 @@ namespace NuLogicEHR.Models
     {
         [Key]
         public int Id { get; set; }
-
         public string? ProfileImage { get; set; }
 
         [Required]

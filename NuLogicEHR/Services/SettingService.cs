@@ -1,9 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using NuLogicEHR.Common.Exceptions;
 using NuLogicEHR.Configurations;
-using NuLogicEHR.Models;
-using NuLogicEHR.Repository;
 using NuLogicEHR.DTOs;
 using NuLogicEHR.Enums;
+using NuLogicEHR.Models;
+using NuLogicEHR.Repository;
 using NuLogicEHR.ViewModels;
 
 namespace NuLogicEHR.Services
@@ -228,6 +229,30 @@ namespace NuLogicEHR.Services
             catch (Exception ex)
             {
                 throw new ApplicationException("An error occurred while fetching sober living homes.", ex);
+            }
+        }
+        public async Task UpdateSoberLivingHomeAsync(int tenantId, int Id, SoberLivingHomeCreateViewModel request)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var repository = new SettingRepository(context);
+                var home = await context.SoberLivingHomes
+                    .FirstOrDefaultAsync(s => s.Id == Id);
+
+                if (home == null)
+                    throw new KeyNotFoundException("Sober Living Home not found");
+
+                home.SoberLivingHomeName = request.SoberLivingHomeName;
+                home.ContactPersonName = request.ContactPersonName;
+                home.ContactNumber = request.ContactNumber;
+                home.EmailId = request.EmailId;
+                home.ModifiedBy = DateTime.UtcNow; // Update modified timestamp
+                await repository.UpdateSoberLivingHomeAsync(Id, home);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error updating sober living home", ex);
             }
         }
     }

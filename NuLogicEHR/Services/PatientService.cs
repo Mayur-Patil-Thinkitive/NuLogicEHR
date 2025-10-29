@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using NuLogicEHR.Configurations;
 using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
@@ -318,49 +318,49 @@ namespace NuLogicEHR.Services
             }
         }
 
-        public async Task<object> GetPatientByIdAsync(int tenantId, int patientId)
-        {
-            try
-            {
-                using var context = await GetContextAsync(tenantId);
-                var demographic = await context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
-                if (demographic == null) throw new InvalidOperationException("Patient not found");
+        //public async Task<object> GetPatientByIdAsync(int tenantId, int patientId)
+        //{
+        //    try
+        //    {
+        //        using var context = await GetContextAsync(tenantId);
+        //        var demographic = await context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
+        //        if (demographic == null) throw new InvalidOperationException("Patient not found");
 
-                var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
-                var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
-                var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
-                var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
+        //        var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
+        //        var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
+        //        var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
+        //        var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
 
-                return new
-                {
-                    Demographic = demographic,
-                    Contact = contact,
-                    EmergencyContacts = emergencyContacts,
-                    Insurance = insurance == null ? null : new
-                    {
-                        insurance.Id,
-                        PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
-                        insurance.InsuranceType,
-                        insurance.InsuranceName,
-                        insurance.MemberId,
-                        insurance.PlanName,
-                        insurance.PlanType,
-                        insurance.GroupId,
-                        insurance.GroupName,
-                        insurance.EffectiveStartDate,
-                        insurance.EffectiveEndDate,
-                        insurance.PatientRelationshipWithInsured,
-                        insurance.PatientId
-                    },
-                    OtherInformation = otherInfo
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching patient with ID {PatientId} for Tenant {TenantId}", patientId, tenantId);
-                throw;
-            }
-        }
+        //        return new
+        //        {
+        //            Demographic = demographic,
+        //            Contact = contact,
+        //            EmergencyContacts = emergencyContacts,
+        //            Insurance = insurance == null ? null : new
+        //            {
+        //                insurance.Id,
+        //                PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
+        //                insurance.InsuranceType,
+        //                insurance.InsuranceName,
+        //                insurance.MemberId,
+        //                insurance.PlanName,
+        //                insurance.PlanType,
+        //                insurance.GroupId,
+        //                insurance.GroupName,
+        //                insurance.EffectiveStartDate,
+        //                insurance.EffectiveEndDate,
+        //                insurance.PatientRelationshipWithInsured,
+        //                insurance.PatientId
+        //            },
+        //            OtherInformation = otherInfo
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error fetching patient with ID {PatientId} for Tenant {TenantId}", patientId, tenantId);
+        //        throw;
+        //    }
+        //}
 
         // Validation Methods
         private void ValidateEmailOrNote(PatientContactViewModel request)
@@ -579,7 +579,7 @@ namespace NuLogicEHR.Services
                 throw;
             }
         }
-        public async Task<object?> GetPatientsByIdAsync(int tenantId, int patientId)
+        public async Task<object?> GetPatientByIdAsync(int tenantId, int patientId)
         {
             try
             {

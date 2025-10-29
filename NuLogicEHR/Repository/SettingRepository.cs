@@ -52,5 +52,20 @@ namespace NuLogicEHR.Repository
         {
             return await _context.SoberLivingHomes.ToListAsync();
         }
+        public async Task UpdateSoberLivingHomeAsync(int soberLivingHomeId, SoberLivingHome home)
+        {
+            var existing = await _context.SoberLivingHomes
+                .FirstOrDefaultAsync(s => s.Id == soberLivingHomeId);
+
+            if (existing == null)
+                throw new Exception("Sober Living Home not found");
+
+            existing.SoberLivingHomeName = home.SoberLivingHomeName;
+            existing.ContactPersonName = home.ContactPersonName;
+            existing.ContactNumber = home.ContactNumber;
+            existing.EmailId = home.EmailId;
+            home.ModifiedBy = DateTime.UtcNow; // Update modified timestamp
+            await _context.SaveChangesAsync();
+        }
     }
 }

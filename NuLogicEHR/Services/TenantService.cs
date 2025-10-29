@@ -79,7 +79,7 @@ namespace NuLogicEHR.Services
                     ""GenderAtBirth"" TEXT NOT NULL,
                     ""CurrentGender"" TEXT NOT NULL,
                     ""Pronouns"" TEXT,
-                    ""DateOfBirth"" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    ""DateOfBirth"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""MaritalStatus"" TEXT,
                     ""TimeZone"" TEXT,
                     ""PreferredLanguage"" TEXT NOT NULL,
@@ -89,8 +89,9 @@ namespace NuLogicEHR.Services
                     ""Race"" TEXT NOT NULL,
                     ""Ethnicity"" TEXT,
                     ""TreatmentType"" TEXT,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
                 );
 
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""PatientContactInformation"" (
@@ -107,8 +108,8 @@ namespace NuLogicEHR.Services
                     ""Country"" TEXT NOT NULL,
                     ""ZipCode"" TEXT NOT NULL,
                     ""PatientId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
@@ -120,8 +121,8 @@ namespace NuLogicEHR.Services
                     ""PhoneNumber"" TEXT,
                     ""Email"" TEXT,
                     ""PatientId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
@@ -135,14 +136,14 @@ namespace NuLogicEHR.Services
                     ""PlanType"" TEXT,
                     ""GroupId"" TEXT,
                     ""GroupName"" TEXT,
-                    ""EffectiveStartDate"" TIMESTAMP WITHOUT TIME ZONE,
-                    ""EffectiveEndDate"" TIMESTAMP WITHOUT TIME ZONE,
+                    ""EffectiveStartDate"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""EffectiveEndDate"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""PatientRelationshipWithInsured"" TEXT,
                     ""InsuranceCard"" TEXT,
                     ""InsuranceCard1"" TEXT,
                     ""PatientId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
@@ -151,12 +152,12 @@ namespace NuLogicEHR.Services
                     ""ConsentToEmail"" BOOLEAN,
                     ""ConsentToMessage"" BOOLEAN,
                     ""PracticeLocation"" TEXT,
-                    ""RegistrationDate"" TIMESTAMP WITHOUT TIME ZONE,
+                    ""RegistrationDate"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""Source"" INTEGER,
-                     ""SoberLivingHome"" INTEGER,
-                     ""PatientId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""SoberLivingHome"" INTEGER,
+                    ""PatientId"" INTEGER NOT NULL,
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
@@ -166,14 +167,14 @@ namespace NuLogicEHR.Services
                     ""TreatmentType"" INTEGER NOT NULL,
                     ""AppointmentType"" INTEGER NOT NULL,
                     ""Location"" INTEGER NOT NULL,
-                    ""Date"" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    ""Date"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""TimeSlot"" TEXT NOT NULL,
                     ""SelectedForms"" TEXT,
                     ""TransportationService"" BOOLEAN NOT NULL DEFAULT FALSE,
                     ""Status"" TEXT NOT NULL DEFAULT 'Scheduled',
                     ""PatientId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
@@ -204,8 +205,9 @@ namespace NuLogicEHR.Services
                     ""KioskPin"" INTEGER,
                     ""Bio"" TEXT,
                     ""Signature"" TEXT,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
                 );
 
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""Staff"" (
@@ -234,11 +236,12 @@ namespace NuLogicEHR.Services
                     ""BankRoutingNumber"" TEXT,
                     ""AccountNumber"" TEXT,
                     ""CAQHProviderId"" TEXT,
-                    ""LastLogin"" TIMESTAMP WITHOUT TIME ZONE,
+                    ""LastLogin"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""Status"" TEXT NOT NULL DEFAULT 'Active',
                     ""Signature"" TEXT,
-                    ""CreatedAt"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedAt"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
                 );
 
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""StaffCredentials"" (
@@ -246,8 +249,8 @@ namespace NuLogicEHR.Services
                     ""CredentialType"" INTEGER NOT NULL,
                     ""CredentialNumber"" TEXT NOT NULL,
                     ""StaffId"" INTEGER NOT NULL,
-                    ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                    ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+                    ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""StaffId"") REFERENCES ""{schemaName}"".""Staff""(""Id"") ON DELETE CASCADE
                 );
                 
@@ -267,8 +270,8 @@ namespace NuLogicEHR.Services
                 ""State"" TEXT,
                 ""Country"" TEXT,
                 ""ZipCode"" TEXT,
-                ""CreatedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
-                ""ModifiedBy"" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+                ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);

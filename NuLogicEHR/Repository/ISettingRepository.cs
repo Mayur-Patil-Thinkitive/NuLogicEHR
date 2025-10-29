@@ -11,5 +11,7 @@ namespace NuLogicEHR.Repository
         Task<IEnumerable<Staff>> GetAllStaffAsync();
         Task<int> CreateSoberLivingHomeAsync(SoberLivingHome soberLivingHome);
         Task<IEnumerable<SoberLivingHome>> GetAllSoberLivingHomesAsync();
+        //Task UpdateSoberLivingHomeAsync(int patientId, SoberLivingHome home);
+        Task UpdateSoberLivingHomeAsync(int soberLivingHomeId, SoberLivingHome home);
     }
 }
