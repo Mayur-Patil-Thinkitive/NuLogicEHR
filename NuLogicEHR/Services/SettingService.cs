@@ -129,7 +129,7 @@ namespace NuLogicEHR.Services
                 {
                     Id = staffId,
                     Message = "Staff created successfully",
-                    CreatedAt = staff.CreatedAt
+                    CreatedAt = staff.CreatedBy
                 };
             }
             catch (CustomValidationException)

@@ -13,22 +13,30 @@ namespace NuLogicEHR.Services
     public class PatientService : BaseService
     {
         private readonly ILogger<PatientService> _logger;
+        private readonly EmailService _emailService;
 
-        public PatientService(TenantService tenantService, DbContextFactory dbContextFactory, ILogger<PatientService> logger)
+        public PatientService(TenantService tenantService, DbContextFactory dbContextFactory, ILogger<PatientService> logger, EmailService emailService)
             : base(tenantService, dbContextFactory)
         {
             _logger = logger;
+            _emailService = emailService;
         }
 
         public async Task<int> CreatePatientDemographicAsync(int tenantId, PatientDemographicViewModel request)
         {
+            _logger.LogInformation("CreatePatientDemographicAsync called for TenantId: {TenantId} with Patient Name: {FirstName} {LastName}", tenantId, request.FirstName, request.LastName);
+
             try
             {
                 // Validate SSN or note requirement
+                _logger.LogInformation("Validating SSN or note requirement for Patient: {FirstName} {LastName}", request.FirstName, request.LastName);
                 ValidateSSNOrNote(request);
 
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context successfully retrieved for TenantId: {TenantId}", tenantId);
+
                 var repository = new PatientRepository(context);
+                _logger.LogInformation("PatientRepository initialized for TenantId: {TenantId}", tenantId);
 
                 var demographic = new PatientDemographic
                 {
@@ -53,24 +61,35 @@ namespace NuLogicEHR.Services
                     TreatmentType = request.TreatmentType.HasValue ? ((TreatmentType)request.TreatmentType.Value).ToString() : null
                 };
 
-                return await repository.AddPatientDemographicAsync(demographic);
+                _logger.LogInformation("Creating patient demographic record for {FirstName} {LastName} in TenantId: {TenantId}", request.FirstName, request.LastName, tenantId);
+
+                var result = await repository.AddPatientDemographicAsync(demographic);
+                _logger.LogInformation("Patient demographic created successfully with Id: {PatientId} for TenantId: {TenantId}", result, tenantId);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating patient demographic for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating patient demographic for TenantId: {TenantId}, Patient Name: {FirstName} {LastName}", tenantId, request.FirstName, request.LastName);
                 throw;
             }
         }
 
         public async Task<int> CreatePatientContactAsync(int tenantId, PatientContactViewModel request)
         {
+            _logger.LogInformation("CreatePatientContactAsync called for TenantId: {TenantId}, PatientId: {PatientId}", tenantId, request.PatientId);
+
             try
             {
                 // Validate email or note requirement
+                _logger.LogInformation("Validating email or note requirement for PatientId: {PatientId}", request.PatientId);
                 ValidateEmailOrNote(request);
 
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context successfully retrieved for TenantId: {TenantId}", tenantId);
+
                 var repository = new PatientRepository(context);
+                _logger.LogInformation("PatientRepository initialized for TenantId: {TenantId}", tenantId);
 
                 var contact = new PatientContactInformation
                 {
@@ -88,26 +107,42 @@ namespace NuLogicEHR.Services
                     PatientId = request.PatientId
                 };
 
-                return await repository.AddPatientContactAsync(contact);
+                _logger.LogInformation("Creating patient contact information for PatientId: {PatientId} in TenantId: {TenantId}", request.PatientId, tenantId);
+
+                var result = await repository.AddPatientContactAsync(contact);
+                _logger.LogInformation("Patient contact created successfully with Id: {ContactId} for PatientId: {PatientId}, TenantId: {TenantId}", result, request.PatientId, tenantId);
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating patient contact for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating patient contact for TenantId: {TenantId}, PatientId: {PatientId}", tenantId, request.PatientId);
                 throw;
             }
         }
-
         public async Task<List<int>> CreateEmergencyContactsAsync(int tenantId, BulkEmergencyContactViewModel request)
         {
+            _logger.LogInformation("CreateEmergencyContactsAsync called for TenantId: {TenantId} with PatientId: {PatientId}", tenantId, request.PatientId);
+
             try
             {
                 using var context = await GetContextAsync(tenantId);
-                var repository = new PatientRepository(context);
+                _logger.LogInformation("Database context successfully created for TenantId: {TenantId}", tenantId);
 
+                var repository = new PatientRepository(context);
                 var contactIds = new List<int>();
+
+                if (request?.EmergencyContacts == null || !request.EmergencyContacts.Any())
+                {
+                    _logger.LogWarning("No emergency contacts provided for PatientId: {PatientId} under TenantId: {TenantId}", request?.PatientId, tenantId);
+                    return contactIds;
+                }
 
                 foreach (var emergencyContact in request.EmergencyContacts)
                 {
+                    _logger.LogInformation("Processing emergency contact for PatientId: {PatientId}, Name: {FirstName} {LastName}",
+                        request.PatientId, emergencyContact.FirstName, emergencyContact.LastName);
+
                     var emergency = new EmergencyContact
                     {
                         PatientId = request.PatientId,
@@ -119,23 +154,31 @@ namespace NuLogicEHR.Services
                     };
 
                     var id = await repository.AddEmergencyContactAsync(emergency);
+                    _logger.LogInformation("Emergency contact created successfully with Id: {Id} for PatientId: {PatientId}", id, request.PatientId);
+
                     contactIds.Add(id);
                 }
+
+                _logger.LogInformation("Successfully created {Count} emergency contacts for PatientId: {PatientId} under TenantId: {TenantId}",
+                    contactIds.Count, request.PatientId, tenantId);
 
                 return contactIds;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating emergency contacts for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating emergency contacts for Tenant {TenantId} and PatientId {PatientId}", tenantId, request.PatientId);
                 throw;
             }
         }
-
         public async Task<int> CreateInsuranceInformationAsync(int tenantId, InsuranceInformationViewModel request)
         {
+            _logger.LogInformation("CreateInsuranceInformationAsync called for TenantId: {TenantId} with PatientId: {PatientId}", tenantId, request.PatientId);
+
             try
             {
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context successfully created for TenantId: {TenantId}", tenantId);
+
                 var repository = new PatientRepository(context);
 
                 var insurance = new InsuranceInformation
@@ -148,29 +191,42 @@ namespace NuLogicEHR.Services
                     PlanType = request.PlanType,
                     GroupId = request.GroupId,
                     GroupName = request.GroupName,
-                    EffectiveStartDate = request.EffectiveStartDate.HasValue ? DateTime.SpecifyKind(request.EffectiveStartDate.Value, DateTimeKind.Utc) : null,
-                    EffectiveEndDate = request.EffectiveEndDate.HasValue ? DateTime.SpecifyKind(request.EffectiveEndDate.Value, DateTimeKind.Utc) : null,
+                    EffectiveStartDate = request.EffectiveStartDate.HasValue
+                        ? DateTime.SpecifyKind(request.EffectiveStartDate.Value, DateTimeKind.Utc)
+                        : null,
+                    EffectiveEndDate = request.EffectiveEndDate.HasValue
+                        ? DateTime.SpecifyKind(request.EffectiveEndDate.Value, DateTimeKind.Utc)
+                        : null,
                     PatientRelationshipWithInsured = request.PatientRelationshipWithInsured,
                     InsuranceCard = request.InsuranceCard,
                     InsuranceCard1 = request.InsuranceCard1,
-
                     PatientId = request.PatientId
                 };
 
-                return await repository.AddInsuranceInformationAsync(insurance);
+                _logger.LogInformation("Creating insurance information for PatientId: {PatientId} under TenantId: {TenantId}", request.PatientId, tenantId);
+
+                var insuranceId = await repository.AddInsuranceInformationAsync(insurance);
+
+                _logger.LogInformation("Insurance information created successfully with Id: {InsuranceId} for PatientId: {PatientId} under TenantId: {TenantId}",
+                    insuranceId, request.PatientId, tenantId);
+
+                return insuranceId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating insurance information for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating insurance information for TenantId: {TenantId}, PatientId: {PatientId}", tenantId, request.PatientId);
                 throw;
             }
         }
-
         public async Task<int> CreateOtherInformationAsync(int tenantId, OtherInformationViewModel request)
         {
+            _logger.LogInformation("CreateOtherInformationAsync called for TenantId: {TenantId} with PatientId: {PatientId}", tenantId, request.PatientId);
+
             try
             {
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context successfully created for TenantId: {TenantId}", tenantId);
+
                 var repository = new PatientRepository(context);
 
                 var other = new OtherInformation
@@ -181,17 +237,26 @@ namespace NuLogicEHR.Services
                     RegistrationDate = request.RegistrationDate ?? DateTime.UtcNow,
                     Source = request.Source,
                     SoberLivingHome = request.SoberLivingHome,
-                    PatientId = request.PatientId
+                    PatientId = request.PatientId,
+                    IsUsingNuLeaseTransportationService = request.IsUsingNuLeaseTransportationService
                 };
 
-                return await repository.AddOtherInformationAsync(other);
+                _logger.LogInformation("Creating 'OtherInformation' record for PatientId: {PatientId} under TenantId: {TenantId}", request.PatientId, tenantId);
+
+                var otherInfoId = await repository.AddOtherInformationAsync(other);
+
+                _logger.LogInformation("OtherInformation record created successfully with Id: {OtherInformationId} for PatientId: {PatientId} under TenantId: {TenantId}",
+                    otherInfoId, request.PatientId, tenantId);
+
+                return otherInfoId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating other information for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error creating other information for TenantId: {TenantId}, PatientId: {PatientId}", tenantId, request.PatientId);
                 throw;
             }
         }
+
         public async Task<object> GetAllPatientsAsync(int tenantId, string? search = null, int page = 1, int pageSize = 10)
         {
             try
@@ -317,51 +382,6 @@ namespace NuLogicEHR.Services
                 throw;
             }
         }
-
-        //public async Task<object> GetPatientByIdAsync(int tenantId, int patientId)
-        //{
-        //    try
-        //    {
-        //        using var context = await GetContextAsync(tenantId);
-        //        var demographic = await context.PatientDemographics.FirstOrDefaultAsync(p => p.Id == patientId);
-        //        if (demographic == null) throw new InvalidOperationException("Patient not found");
-
-        //        var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
-        //        var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == patientId).ToListAsync();
-        //        var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
-        //        var otherInfo = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
-
-        //        return new
-        //        {
-        //            Demographic = demographic,
-        //            Contact = contact,
-        //            EmergencyContacts = emergencyContacts,
-        //            Insurance = insurance == null ? null : new
-        //            {
-        //                insurance.Id,
-        //                PaymentMethod = insurance.PaymentMethod.HasValue ? (insurance.PaymentMethod.Value ? "SelfPay" : "Insurance") : null,
-        //                insurance.InsuranceType,
-        //                insurance.InsuranceName,
-        //                insurance.MemberId,
-        //                insurance.PlanName,
-        //                insurance.PlanType,
-        //                insurance.GroupId,
-        //                insurance.GroupName,
-        //                insurance.EffectiveStartDate,
-        //                insurance.EffectiveEndDate,
-        //                insurance.PatientRelationshipWithInsured,
-        //                insurance.PatientId
-        //            },
-        //            OtherInformation = otherInfo
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error fetching patient with ID {PatientId} for Tenant {TenantId}", patientId, tenantId);
-        //        throw;
-        //    }
-        //}
-
         // Validation Methods
         private void ValidateEmailOrNote(PatientContactViewModel request)
         {
@@ -387,7 +407,6 @@ namespace NuLogicEHR.Services
                 }
             }
         }
-
         private void ValidateSSNOrNote(PatientDemographicViewModel request)
         {
             bool hasSSN = request.SSN.HasValue && request.SSN.Value > 0;
@@ -408,8 +427,53 @@ namespace NuLogicEHR.Services
                 throw new ArgumentException("SSN must be a 9-digit number");
             }
         }
+        public async Task<object> GetPatientSourceInfoAsync(int tenantId, int patientId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var otherInfo = await context.OtherInformation
+                    .Where(o => o.PatientId == patientId)
+                    .Select(o => new
+                    {
+                        o.Source,
+                        o.SoberLivingHomeName,
+                        o.RegistrationDate
+                    })
+                    .FirstOrDefaultAsync();
 
-        public async Task<(int ImportedCount, List<string> Errors)> ImportPatientsFromCsvAsync(int tenantId, Stream csvStream)
+                if (otherInfo == null)
+                {
+                    return new { Message = "No source information found for this patient" };
+                }
+
+                return otherInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching patient source info for Patient {PatientId}, Tenant {TenantId}", patientId, tenantId);
+                throw;
+            }
+        }
+        public async Task<List<object>> GetSoberLivingHomesAsync(int tenantId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var soberHomes = await context.SoberLivingHomes
+                    .Where(s => s.Status == true)
+                    .Select(s => new { Id = s.Id, Name = s.SoberLivingHomeName })
+                    .ToListAsync();
+                
+                return soberHomes.Cast<object>().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching sober living homes for Tenant {TenantId}", tenantId);
+                throw;
+            }
+        }
+        public async Task<(int ImportedCount, List<string> Errors)> ImportPatientsFromCsvAsync(int tenantId, Stream csvStream, int? soberLivingHomeId = null)
         {
             var validationErrors = new List<string>();
             var importedCount = 0;
@@ -419,6 +483,18 @@ namespace NuLogicEHR.Services
                 using var context = await GetContextAsync(tenantId);
                 var repository = new PatientRepository(context);
 
+                // Validate soberLivingHomeId if provided
+                if (soberLivingHomeId.HasValue)
+                {
+                    var soberHomeExists = await context.SoberLivingHomes
+                        .AnyAsync(s => s.Id == soberLivingHomeId.Value && s.Status == true);
+                    
+                    if (!soberHomeExists)
+                    {
+                        validationErrors.Add($"Invalid SoberLivingHomeId: {soberLivingHomeId.Value}. Please select a valid sober living home.");
+                        return (0, validationErrors);
+                    }
+                } 
                 using var reader = new StreamReader(csvStream);
                 using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
                 csv.Context.Configuration.HeaderValidated = null;
@@ -436,7 +512,7 @@ namespace NuLogicEHR.Services
         };
                 var optionalColumns = new List<string>
         {
-            "SSN", "TreatmentType", "InsuranceName", "MemberId"
+            "SSN", "TreatmentType", "Email", "InsuranceName", "MemberId"
         };
                 var allExpectedColumns = requiredColumns.Concat(optionalColumns).ToList();
 
@@ -519,6 +595,24 @@ namespace NuLogicEHR.Services
 
                         var patientId = await repository.AddPatientDemographicAsync(demographic);
 
+                        // Create PatientContactInformation with email if provided
+                        if (!string.IsNullOrEmpty(record.Email))
+                        {
+                            var contactInfo = new PatientContactInformation
+                            {
+                                Email = record.Email,
+                                MobileNumber = "Null",
+                                AddressLine1 = "Null",
+                                City = "Null",
+                                State = "Null",
+                                Country = "Null",
+                                ZipCode = "Null",
+                                PatientId = patientId
+                            };
+
+                            await repository.AddPatientContactAsync(contactInfo);
+                        }
+
                         if (!string.IsNullOrEmpty(record.InsuranceName))
                         {
                             var insurance = new InsuranceInformation
@@ -532,6 +626,39 @@ namespace NuLogicEHR.Services
                             await repository.AddInsuranceInformationAsync(insurance);
                         }
 
+                        // Always create OtherInformation for imported patients with Source = SoberLivingHome
+                        var otherInfo = new OtherInformation
+                        {
+                            Source = Source.SoberLivingHome,
+                            ConsentToEmail = true,
+                            ConsentToMessage = true,
+
+                            RegistrationDate = DateTime.UtcNow,
+                            PatientId = patientId
+                        };
+
+                        // Only set SoberLivingHomeId if it exists and is valid
+                        if (soberLivingHomeId.HasValue)
+                        {
+                            var soberHome = await context.SoberLivingHomes
+                                .Where(s => s.Id == soberLivingHomeId.Value && s.Status == true)
+                                .Select(s => new { s.Id, s.SoberLivingHomeName })
+                                .FirstOrDefaultAsync();
+                            
+                            if (soberHome != null)
+                            {
+                                otherInfo.SoberLivingHomeId = soberHome.Id;
+                                otherInfo.SoberLivingHomeName = soberHome.SoberLivingHomeName;
+                            }
+                        }
+
+                        await repository.AddOtherInformationAsync(otherInfo);
+                        // Send intake form email if patient has email
+                        if (!string.IsNullOrEmpty(record.Email))
+                        {
+                            var fullName = $"{record.FirstName} {record.LastName}";
+                            await _emailService.SendIntakeFormEmailAsync(record.Email, fullName, otherInfo.SoberLivingHomeName);
+                        }
                         importedCount++;
                     }
                     catch (Exception exRow)
@@ -576,6 +703,41 @@ namespace NuLogicEHR.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
+                throw;
+            }
+        }
+        public async Task<List<object>> GetImportedPatientsWithEmailAsync(int tenantId)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+                var importedPatients = await context.OtherInformation
+                    .Where(o => o.Source == Source.SoberLivingHome && o.ConsentToEmail == true)
+                    .Join(context.PatientDemographics,
+                        o => o.PatientId,
+                        p => p.Id,
+                        (o, p) => new { OtherInfo = o, Patient = p })
+                    .Join(context.PatientContactInformation,
+                        combined => combined.Patient.Id,
+                        c => c.PatientId,
+                        (combined, c) => new
+                        {
+                            PatientId = combined.Patient.Id,
+                            FirstName = combined.Patient.FirstName,
+                            LastName = combined.Patient.LastName,
+                            Email = c.Email,
+                            SoberLivingHomeName = combined.OtherInfo.SoberLivingHomeName,
+                            RegistrationDate = combined.OtherInfo.RegistrationDate,
+                            ConsentToEmail = combined.OtherInfo.ConsentToEmail
+                        })
+                    .Where(x => !string.IsNullOrEmpty(x.Email))
+                    .ToListAsync();
+
+                return importedPatients.Cast<object>().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching imported patients with email for Tenant {TenantId}", tenantId);
                 throw;
             }
         }
