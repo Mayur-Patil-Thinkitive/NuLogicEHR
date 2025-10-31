@@ -14,5 +14,8 @@ namespace NuLogicEHR.ViewModels
         public DateTime? RegistrationDate { get; set; }
         public Source? Source { get; set; }
         public SoberLivingHomeType? SoberLivingHome { get; set; }
+        public bool? IsUsingNuLeaseTransportationService { get; set; }
+
+
     }
 }

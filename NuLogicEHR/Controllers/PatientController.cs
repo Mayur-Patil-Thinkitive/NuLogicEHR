@@ -163,36 +163,6 @@ namespace NuLogicEHR.Controllers
             }
         }
 
-        [HttpGet("Get-Patient-Details")]
-        public async Task<IActionResult> GetPatient()
-        {
-            try
-            {
-                if (!Request.Headers.TryGetValue("TenantId", out var tenantIdHeader) ||
-                    !int.TryParse(tenantIdHeader, out var tenantId))
-                {
-                    return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
-                }
-
-                if (!Request.Headers.TryGetValue("PatientId", out var patientIdHeader) ||
-                    !int.TryParse(patientIdHeader, out var patientId))
-                {
-                    return BadRequest(new { Message = "PatientId header is required", StatusCode = 400 });
-                }
-
-                var patient = await _patientService.GetPatientByIdAsync(tenantId, patientId);
-                return Ok(new { Data = patient, Message = "Patient retrieved successfully", StatusCode = 200 });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(new { Message = ex.Message, StatusCode = 404 });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
-            }
-        }
-
         [HttpGet("Get-All-Patients")]
         public async Task<IActionResult> GetAllPatients([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -234,10 +204,54 @@ namespace NuLogicEHR.Controllers
             }
         }
 
+        [HttpGet("Get-Patient-Source-Info")]
+        public async Task<IActionResult> GetPatientSourceInfo([FromQuery] int patientId)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
 
+            try
+            {
+                var sourceInfo = await _patientService.GetPatientSourceInfoAsync(tenantId, patientId);
+                return Ok(new
+                {
+                    Data = sourceInfo,
+                    Message = "Patient source info retrieved successfully",
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving patient source info for Patient {PatientId}, Tenant {TenantId}", patientId, tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
+
+        [HttpGet("Get-Sober-Living-Homes")]
+        public async Task<IActionResult> GetSoberLivingHomes()
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            try
+            {
+                var soberHomes = await _patientService.GetSoberLivingHomesAsync(tenantId);
+                return Ok(new
+                {
+                    Data = soberHomes,
+                    Message = "Sober living homes retrieved successfully",
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving sober living homes for Tenant {TenantId}", tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
 
         [HttpPost("Import-Patient-Records")]
-        public async Task<IActionResult> ImportPatients(IFormFile csvFile)
+        public async Task<IActionResult> ImportPatients(IFormFile csvFile, [FromForm] int? soberLivingHomeId = null)
         {
             if (!TryGetTenantId(out var tenantId))
                 return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
@@ -251,7 +265,7 @@ namespace NuLogicEHR.Controllers
             try
             {
                 using var stream = csvFile.OpenReadStream();
-                var (importedCount, errors) = await _patientService.ImportPatientsFromCsvAsync(tenantId, stream);
+                var (importedCount, errors) = await _patientService.ImportPatientsFromCsvAsync(tenantId, stream, soberLivingHomeId);
 
                 var message = errors.Count > 0
                     ? $"Imported {importedCount} patients with {errors.Count} errors"
@@ -297,6 +311,28 @@ namespace NuLogicEHR.Controllers
             {
                 _logger.LogError(ex, "Error deleting patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
                 return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
+
+        [HttpGet("imported-patients-with-email")]
+        public async Task<IActionResult> GetImportedPatientsWithEmail()
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            try
+            {
+                var patients = await _patientService.GetImportedPatientsWithEmailAsync(tenantId);
+                return Ok(new
+                {
+                    Data = patients,
+                    Message = $"Found {patients.Count} imported patients with email consent",
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message, StatusCode = 500 });
             }
         }
     }

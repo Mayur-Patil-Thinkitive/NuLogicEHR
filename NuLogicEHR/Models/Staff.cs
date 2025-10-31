@@ -61,7 +61,7 @@ namespace NuLogicEHR.Models
         // Navigation property for credentials
         public ICollection<StaffCredential> Credentials { get; set; } = new List<StaffCredential>();
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedBy { get; set; } = DateTime.UtcNow;
+        public DateTime ModifiedBy { get; set; } = DateTime.UtcNow;
     }
 }

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using NuLogicEHR.Configurations;
 using NuLogicEHR.Models;
 using System.Collections.Concurrent;
@@ -19,38 +19,39 @@ namespace NuLogicEHR.Services
 
         public async Task<Tenant> CreateTenantAsync(string hospitalName)
         {
+            // ✅ Keep schema name EXACTLY as user types it (including @, #, spaces, etc.)
+            var schemaName = hospitalName;
+
             var existingTenant = await _context.Tenants
                 .FirstOrDefaultAsync(t => t.HospitalName.ToLower() == hospitalName.ToLower());
 
             if (existingTenant != null)
                 throw new InvalidOperationException("Tenant with this hospital name already exists");
 
-            var schemaName = hospitalName.ToLower().Replace(" ", "_").Replace("-", "_");
-
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var tenant = new Tenant
                 {
-                    HospitalName = hospitalName,
+                    HospitalName = hospitalName,  
                     SchemaName = schemaName,
                     CreatedBy = DateTime.UtcNow
                 };
 
                 _context.Tenants.Add(tenant);
                 await _context.SaveChangesAsync();
-
-                await CreateSchemaAsync(schemaName);
-                
+                await CreateSchemaAsync(schemaName);  
                 await transaction.CommitAsync();
                 _tenantSchemaCache.TryAdd(tenant.Id, schemaName);
-
                 return tenant;
             }
             catch
             {
                 await transaction.RollbackAsync();
                 await DropSchemaIfExistsAsync(schemaName);
+                // ✅ MUST QUOTE when dropping schema (to match exact name)
+                await _context.Database.ExecuteSqlRawAsync($"DROP SCHEMA IF EXISTS \"{schemaName}\" CASCADE");
+
                 await ResetTenantSequenceAsync();
                 throw;
             }
@@ -147,6 +148,26 @@ namespace NuLogicEHR.Services
                     FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
                 );
 
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SoberLivingHomes"" (
+                ""Id"" SERIAL PRIMARY KEY,
+                ""SoberLivingHomeName"" TEXT NOT NULL,
+                ""ContactPersonName"" TEXT NOT NULL,
+                ""EmailId"" TEXT NOT NULL,
+                ""ContactNumber"" TEXT NOT NULL,
+                ""FaxNumber"" TEXT,
+                ""RegistrationNumber"" TEXT,
+                ""Transportation"" BOOLEAN,
+                ""Status"" BOOLEAN,
+                ""AddressLine1"" TEXT,
+                ""AddressLine2"" TEXT,
+                ""City"" TEXT NOT NULL,
+                ""State"" TEXT,
+                ""Country"" TEXT,
+                ""ZipCode"" TEXT,
+                ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+               );
+
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""OtherInformation"" (
                     ""Id"" SERIAL PRIMARY KEY,
                     ""ConsentToEmail"" BOOLEAN,
@@ -155,10 +176,14 @@ namespace NuLogicEHR.Services
                     ""RegistrationDate"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""Source"" INTEGER,
                     ""SoberLivingHome"" INTEGER,
+                    ""SoberLivingHomeId"" INTEGER,
+                    ""SoberLivingHomeName"" TEXT,
+                  ""IsUsingNuLeaseTransportationService"" BOOLEAN,
                     ""PatientId"" INTEGER NOT NULL,
                     ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
+                    FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id""),
+                    FOREIGN KEY (""SoberLivingHomeId"") REFERENCES ""{schemaName}"".""SoberLivingHomes""(""Id"")
                 );
 
                 CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SchedulingAppointments"" (
@@ -253,26 +278,23 @@ namespace NuLogicEHR.Services
                     ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (""StaffId"") REFERENCES ""{schemaName}"".""Staff""(""Id"") ON DELETE CASCADE
                 );
-                
-                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""SoberLivingHomes"" (
-                ""Id"" SERIAL PRIMARY KEY,
-                ""SoberLivingHomeName"" TEXT NOT NULL,
-                ""ContactPersonName"" TEXT NOT NULL,
-                ""EmailId"" TEXT NOT NULL,
-                ""ContactNumber"" TEXT NOT NULL,
-                ""FaxNumber"" TEXT,
-                ""RegistrationNumber"" TEXT,
-                ""Transportation"" BOOLEAN,
-                ""Status"" BOOLEAN,
-                ""AddressLine1"" TEXT,
-                ""AddressLine2"" TEXT,
-                ""City"" TEXT NOT NULL,
-                ""State"" TEXT,
-                ""Country"" TEXT,
-                ""ZipCode"" TEXT,
-                ""CreatedBy""  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                ""ModifiedBy"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-               );";
+               
+                CREATE TABLE IF NOT EXISTS ""{schemaName}"".""PatientIntakeHistories"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""PatientId"" INTEGER NOT NULL,
+                    ""MedicalHistoryJson"" TEXT,
+                    ""VaccineHistoryJson"" TEXT,
+                    ""SurgicalHistoryJson"" TEXT,
+                    ""FamilyHistoryJson"" TEXT,
+                    ""TobaccoUseJson"" TEXT,
+                    ""AlcoholUseJson"" TEXT,
+                    ""SubstanceUseJson"" TEXT,
+                    ""CurrentlyOnInjections"" BOOLEAN,
+                    ""InjectionHistoryJson"" TEXT,
+                    ""CreatedAt"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    ""UpdatedAt"" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (""PatientId"") REFERENCES ""{schemaName}"".""PatientDemographics""(""Id"")
+                );";
 
             using var tablesCmd = new Npgsql.NpgsqlCommand(createTablesScript, connection);
             await tablesCmd.ExecuteNonQueryAsync();

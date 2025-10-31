@@ -26,6 +26,8 @@ namespace NuLogicEHR.ViewModels
         [Name("TreatmentType")]
         public string? TreatmentType { get; set; }
 
+        [Name("Email")]
+        public string? Email { get; set; }
         // Insurance Information fields (only name and member id)
         [Name("InsuranceName")]
         public string? InsuranceName { get; set; }

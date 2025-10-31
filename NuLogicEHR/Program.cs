@@ -5,6 +5,7 @@ using NuLogicEHR.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using SendGrid.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,13 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpContextAccessor();
+// Configure SendGrid
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("SendGrid"));
+builder.Services.AddSendGrid(options =>
+{
+    options.ApiKey = builder.Configuration.GetSection("SendGrid")["ApiKey"];
+});
+builder.Services.AddScoped<EmailService>();builder.Services.AddHttpContextAccessor();
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -44,6 +51,7 @@ builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<AppointmentService>();
 builder.Services.AddScoped<SettingService>();
+builder.Services.AddScoped<IntakeFormService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<DbContextFactory>();
 builder.Services.AddSingleton<IModelCacheKeyFactory, DynamicSchemaModelCacheKeyFactory>();
