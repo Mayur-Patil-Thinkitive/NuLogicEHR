@@ -24,6 +24,7 @@ namespace NuLogicEHR.Configurations
         public DbSet<Staff> Staff { get; set; }
         public DbSet<StaffCredential> StaffCredentials { get; set; }
         public DbSet<SoberLivingHome> SoberLivingHomes { get; set; }
+        public DbSet<PatientIntakeHistory> PatientIntakeHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,6 +61,11 @@ namespace NuLogicEHR.Configurations
                 .HasOne(s => s.PatientDemographic)
                 .WithMany()
                 .HasForeignKey(s => s.PatientId);
+
+            modelBuilder.Entity<PatientIntakeHistory>()
+                .HasOne(h => h.PatientDemographic)
+                .WithOne()
+                .HasForeignKey<PatientIntakeHistory>(h => h.PatientId);
 
             // Staff relationships
             modelBuilder.Entity<StaffCredential>()
