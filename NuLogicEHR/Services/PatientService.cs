@@ -261,12 +261,16 @@ namespace NuLogicEHR.Services
         {
             try
             {
+                _logger.LogInformation("Started fetching patients for TenantId: {TenantId} | Search: {Search} | Page: {Page} | PageSize: {PageSize}", tenantId, search, page, pageSize);
+
                 using var context = await GetContextAsync(tenantId);
                 var repository = new PatientRepository(context);
                 var query = context.PatientDemographics.AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
+                    _logger.LogInformation("Applying search filter for patients with keyword: {Search}", search);
+
                     query = query.Where(p =>
                         p.FirstName.Contains(search) ||
                         p.LastName.Contains(search) ||
@@ -275,14 +279,21 @@ namespace NuLogicEHR.Services
                 }
 
                 var totalCount = await query.CountAsync();
+                _logger.LogInformation("Total patient count found: {TotalCount}", totalCount);
+
                 var demographics = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
+
+                _logger.LogInformation("Fetched {Count} patients for page {Page}", demographics.Count, page);
+
                 var result = new List<PatientCompleteViewModel>();
 
                 foreach (var demographic in demographics)
                 {
+                    _logger.LogDebug("Fetching detailed info for PatientId: {PatientId}", demographic.Id);
+
                     var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == demographic.Id);
                     var emergencyContacts = await context.EmergencyContacts.Where(e => e.PatientId == demographic.Id).ToListAsync();
                     var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == demographic.Id);
@@ -365,6 +376,8 @@ namespace NuLogicEHR.Services
 
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+                _logger.LogInformation("Successfully fetched all patients for TenantId: {TenantId} | TotalPages: {TotalPages}", tenantId, totalPages);
+
                 return new
                 {
                     Data = result,
@@ -378,7 +391,7 @@ namespace NuLogicEHR.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching all patients for Tenant {TenantId}", tenantId);
+                _logger.LogError(ex, "Error fetching all patients for TenantId: {TenantId}", tenantId);
                 throw;
             }
         }
@@ -429,9 +442,12 @@ namespace NuLogicEHR.Services
         }
         public async Task<object> GetPatientSourceInfoAsync(int tenantId, int patientId)
         {
+            _logger.LogInformation("Starting GetPatientSourceInfoAsync for TenantId: {TenantId}, PatientId: {PatientId}", tenantId, patientId);
             try
             {
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context initialized successfully for TenantId: {TenantId}", tenantId);
+
                 var otherInfo = await context.OtherInformation
                     .Where(o => o.PatientId == patientId)
                     .Select(o => new
@@ -444,17 +460,20 @@ namespace NuLogicEHR.Services
 
                 if (otherInfo == null)
                 {
+                    _logger.LogWarning("No source information found for PatientId: {PatientId}, TenantId: {TenantId}", patientId, tenantId);
                     return new { Message = "No source information found for this patient" };
                 }
 
+                _logger.LogInformation("Successfully fetched source info for PatientId: {PatientId}, TenantId: {TenantId}", patientId, tenantId);
                 return otherInfo;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching patient source info for Patient {PatientId}, Tenant {TenantId}", patientId, tenantId);
+                _logger.LogError(ex, "Error fetching patient source info for PatientId: {PatientId}, TenantId: {TenantId}", patientId, tenantId);
                 throw;
             }
         }
+
         public async Task<List<object>> GetSoberLivingHomesAsync(int tenantId)
         {
             try
@@ -839,6 +858,308 @@ namespace NuLogicEHR.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching patient {PatientId} for Tenant {TenantId}", patientId, tenantId);
+                throw;
+            }
+        }
+        public async Task<bool> UpdatePatientAsync(int tenantId, PatientUpdateViewModel request)
+        {
+            try
+            {
+                using var context = await GetContextAsync(tenantId);
+
+                var patient = await context.PatientDemographics.FindAsync(request.PatientId);
+                if (patient == null)
+                    throw new InvalidOperationException($"Patient with ID {request.PatientId} not found");
+
+                if (request.Demographic != null)
+                    UpdateDemographic(context, request.PatientId, request.Demographic);
+
+                if (request.Contact != null)
+                    await UpdateContactAsync(context, request.PatientId, request.Contact);
+
+                if (request.EmergencyContacts != null)
+                    await UpdateEmergencyContactsAsync(context, request.PatientId, request.EmergencyContacts);
+
+                if (request.Insurance != null)
+                    await UpdateInsuranceAsync(context, request.PatientId, request.Insurance);
+
+                if (request.OtherInformation != null)
+                    await UpdateOtherInfoAsync(context, request.PatientId, request.OtherInformation);
+
+                await context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating patient {PatientId}", request.PatientId);
+                throw;
+            }
+        }
+        private void UpdateDemographic(ApplicationDbContext context, int patientId, PatientDemographicUpdateData data)
+        {
+            _logger.LogInformation("Starting UpdateDemographic for PatientId: {PatientId}", patientId);
+
+            try
+            {
+                var demo = context.PatientDemographics.FirstOrDefault(p => p.Id == patientId);
+                if (demo == null)
+                {
+                    _logger.LogWarning("No demographic record found for PatientId: {PatientId}", patientId);
+                    return;
+                }
+
+                _logger.LogInformation("Demographic record found for PatientId: {PatientId}. Updating fields if provided...", patientId);
+
+                if (!string.IsNullOrEmpty(data.FirstName)) demo.FirstName = data.FirstName;
+                if (!string.IsNullOrEmpty(data.MiddleName)) demo.MiddleName = data.MiddleName;
+                if (!string.IsNullOrEmpty(data.LastName)) demo.LastName = data.LastName;
+                if (!string.IsNullOrEmpty(data.Suffix)) demo.Suffix = data.Suffix;
+                if (!string.IsNullOrEmpty(data.Nickname)) demo.Nickname = data.Nickname;
+                if (data.DateOfBirth.HasValue)
+                    demo.DateOfBirth = data.DateOfBirth.Value.Kind == DateTimeKind.Utc
+                        ? data.DateOfBirth.Value
+                        : data.DateOfBirth.Value.ToUniversalTime();
+                if (!string.IsNullOrEmpty(data.GenderAtBirth)) demo.GenderAtBirth = data.GenderAtBirth;
+                if (!string.IsNullOrEmpty(data.CurrentGender)) demo.CurrentGender = data.CurrentGender;
+                if (!string.IsNullOrEmpty(data.Pronouns)) demo.Pronouns = data.Pronouns;
+                if (!string.IsNullOrEmpty(data.MaritalStatus)) demo.MaritalStatus = data.MaritalStatus;
+                if (!string.IsNullOrEmpty(data.TimeZone)) demo.TimeZone = data.TimeZone;
+                if (!string.IsNullOrEmpty(data.Occupation)) demo.Occupation = data.Occupation;
+                if (data.SSN.HasValue) demo.SSN = data.SSN.Value;
+                if (!string.IsNullOrEmpty(data.SSNNote)) demo.SSNNote = data.SSNNote;
+                if (!string.IsNullOrEmpty(data.Race)) demo.Race = data.Race;
+                if (!string.IsNullOrEmpty(data.Ethnicity)) demo.Ethnicity = data.Ethnicity;
+                if (!string.IsNullOrEmpty(data.PreferredLanguage)) demo.PreferredLanguage = data.PreferredLanguage;
+                if (data.TreatmentType.HasValue)
+                    demo.TreatmentType = ((NuLogicEHR.Enums.TreatmentType)data.TreatmentType.Value).ToString();
+
+                demo.ModifiedBy = DateTime.UtcNow;
+                context.PatientDemographics.Update(demo);
+
+                _logger.LogInformation("Successfully updated demographic record for PatientId: {PatientId}", patientId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating demographic information for PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+        private async Task UpdateContactAsync(ApplicationDbContext context, int patientId, PatientContactUpdateData data)
+        {
+            _logger.LogInformation("Starting UpdateContactAsync for PatientId: {PatientId}", patientId);
+
+            try
+            {
+                var contact = await context.PatientContactInformation.FirstOrDefaultAsync(c => c.PatientId == patientId);
+                if (contact == null)
+                {
+                    _logger.LogWarning("No contact information found for PatientId: {PatientId}", patientId);
+                    return;
+                }
+
+                _logger.LogInformation("Contact record found for PatientId: {PatientId}. Updating fields if provided...", patientId);
+
+                if (!string.IsNullOrEmpty(data.MobileNumber)) contact.MobileNumber = data.MobileNumber;
+                if (!string.IsNullOrEmpty(data.HomeNumber)) contact.HomeNumber = data.HomeNumber;
+                if (!string.IsNullOrEmpty(data.Email)) contact.Email = data.Email;
+                if (!string.IsNullOrEmpty(data.EmailNote)) contact.EmailNote = data.EmailNote;
+                if (!string.IsNullOrEmpty(data.FaxNumber)) contact.FaxNumber = data.FaxNumber;
+                if (!string.IsNullOrEmpty(data.AddressLine1)) contact.AddressLine1 = data.AddressLine1;
+                if (!string.IsNullOrEmpty(data.AddressLine2)) contact.AddressLine2 = data.AddressLine2;
+                if (!string.IsNullOrEmpty(data.City)) contact.City = data.City;
+                if (!string.IsNullOrEmpty(data.State)) contact.State = data.State;
+                if (!string.IsNullOrEmpty(data.Country)) contact.Country = data.Country;
+                if (!string.IsNullOrEmpty(data.ZipCode)) contact.ZipCode = data.ZipCode;
+
+                contact.ModifiedBy = DateTime.UtcNow;
+                context.PatientContactInformation.Update(contact);
+
+                _logger.LogInformation("Successfully updated contact information for PatientId: {PatientId}", patientId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating contact information for PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+        private async Task UpdateEmergencyContactsAsync(ApplicationDbContext context, int patientId, List<EmergencyContactUpdateData> data)
+        {
+            _logger.LogInformation("Starting UpdateEmergencyContactsAsync for PatientId: {PatientId}", patientId);
+
+            try
+            {
+                // Validate patient exists
+                var patientExists = await context.PatientDemographics.AnyAsync(p => p.Id == patientId);
+                if (!patientExists)
+                {
+                    _logger.LogWarning("Cannot update emergency contacts. No patient found with PatientId: {PatientId}", patientId);
+                    return;
+                }
+
+                _logger.LogInformation("Patient found. Fetching existing emergency contacts for PatientId: {PatientId}", patientId);
+
+                var existing = await context.EmergencyContacts.Where(ec => ec.PatientId == patientId).ToListAsync();
+
+                // Replace all existing contacts with new ones
+                context.EmergencyContacts.RemoveRange(existing);
+                _logger.LogInformation("Existing emergency contacts removed for PatientId: {PatientId}. Processing new contact data...", patientId);
+
+                foreach (var item in data)
+                {
+                    if (item.IsDeleted && item.Id.HasValue)
+                    {
+                        var toDelete = existing.FirstOrDefault(ec => ec.Id == item.Id.Value);
+                        if (toDelete != null)
+                        {
+                            context.EmergencyContacts.Remove(toDelete);
+                            _logger.LogInformation("Deleted emergency contact (Id: {ContactId}) for PatientId: {PatientId}", item.Id.Value, patientId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Tried to delete non-existing emergency contact (Id: {ContactId}) for PatientId: {PatientId}", item.Id, patientId);
+                        }
+                    }
+                    else if (item.Id.HasValue)
+                    {
+                        var toUpdate = existing.FirstOrDefault(ec => ec.Id == item.Id.Value);
+                        if (toUpdate != null)
+                        {
+                            if (!string.IsNullOrEmpty(item.RelationshipWithPatient)) toUpdate.RelationshipWithPatient = item.RelationshipWithPatient;
+                            if (!string.IsNullOrEmpty(item.FirstName)) toUpdate.FirstName = item.FirstName;
+                            if (!string.IsNullOrEmpty(item.LastName)) toUpdate.LastName = item.LastName;
+                            if (!string.IsNullOrEmpty(item.PhoneNumber)) toUpdate.PhoneNumber = item.PhoneNumber;
+                            if (!string.IsNullOrEmpty(item.Email)) toUpdate.Email = item.Email;
+                            toUpdate.ModifiedBy = DateTime.UtcNow;
+                            context.EmergencyContacts.Update(toUpdate);
+
+                            _logger.LogInformation("Updated emergency contact (Id: {ContactId}) for PatientId: {PatientId}", item.Id.Value, patientId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Tried to update non-existing emergency contact (Id: {ContactId}) for PatientId: {PatientId}", item.Id, patientId);
+                        }
+                    }
+                    else
+                    {
+                        context.EmergencyContacts.Add(new EmergencyContact
+                        {
+                            PatientId = patientId,
+                            RelationshipWithPatient = item.RelationshipWithPatient,
+                            FirstName = item.FirstName,
+                            LastName = item.LastName,
+                            PhoneNumber = item.PhoneNumber,
+                            Email = item.Email,
+                            CreatedBy = DateTime.UtcNow,
+                            ModifiedBy = DateTime.UtcNow
+                        });
+
+                        _logger.LogInformation("Added new emergency contact ({FirstName} {LastName}) for PatientId: {PatientId}", item.FirstName, item.LastName, patientId);
+                    }
+                }
+
+                _logger.LogInformation("Completed updating emergency contacts for PatientId: {PatientId}", patientId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating emergency contacts for PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+        private async Task UpdateInsuranceAsync(ApplicationDbContext context, int patientId, InsuranceUpdateData data)
+        {
+            _logger.LogInformation("Starting UpdateInsuranceAsync for PatientId: {PatientId}", patientId);
+
+            try
+            {
+                var insurance = await context.InsuranceInformation.FirstOrDefaultAsync(i => i.PatientId == patientId);
+                if (insurance == null)
+                {
+                    _logger.LogWarning("No insurance record found for PatientId: {PatientId}", patientId);
+                    return;
+                }
+
+                _logger.LogInformation("Insurance record found for PatientId: {PatientId}. Updating fields if provided...", patientId);
+
+                if (data.PaymentMethod.HasValue) insurance.PaymentMethod = data.PaymentMethod.Value;
+                if (!string.IsNullOrEmpty(data.InsuranceType)) insurance.InsuranceType = data.InsuranceType;
+                if (!string.IsNullOrEmpty(data.InsuranceName)) insurance.InsuranceName = data.InsuranceName;
+                if (!string.IsNullOrEmpty(data.MemberId)) insurance.MemberId = data.MemberId;
+                if (!string.IsNullOrEmpty(data.PlanName)) insurance.PlanName = data.PlanName;
+                if (!string.IsNullOrEmpty(data.PlanType)) insurance.PlanType = data.PlanType;
+                if (!string.IsNullOrEmpty(data.GroupId)) insurance.GroupId = data.GroupId;
+                if (!string.IsNullOrEmpty(data.GroupName)) insurance.GroupName = data.GroupName;
+                if (data.EffectiveStartDate.HasValue)
+                    insurance.EffectiveStartDate = data.EffectiveStartDate.Value.Kind == DateTimeKind.Utc
+                        ? data.EffectiveStartDate.Value
+                        : data.EffectiveStartDate.Value.ToUniversalTime();
+                if (data.EffectiveEndDate.HasValue)
+                    insurance.EffectiveEndDate = data.EffectiveEndDate.Value.Kind == DateTimeKind.Utc
+                        ? data.EffectiveEndDate.Value
+                        : data.EffectiveEndDate.Value.ToUniversalTime();
+                if (!string.IsNullOrEmpty(data.PatientRelationshipWithInsured))
+                    insurance.PatientRelationshipWithInsured = Enum.Parse<NuLogicEHR.Enums.PatientRelationshipWithInsured>(data.PatientRelationshipWithInsured);
+
+                insurance.ModifiedBy = DateTime.UtcNow;
+                context.InsuranceInformation.Update(insurance);
+
+                _logger.LogInformation("Successfully updated insurance information for PatientId: {PatientId}", patientId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating insurance information for PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+        private async Task UpdateOtherInfoAsync(ApplicationDbContext context, int patientId, OtherInfoUpdateData data)
+        {
+            _logger.LogInformation("Starting UpdateOtherInfoAsync for PatientId: {PatientId}", patientId);
+
+            try
+            {
+                var other = await context.OtherInformation.FirstOrDefaultAsync(o => o.PatientId == patientId);
+                if (other == null)
+                {
+                    _logger.LogWarning("No 'OtherInformation' record found for PatientId: {PatientId}", patientId);
+                    return;
+                }
+
+                _logger.LogInformation("Found 'OtherInformation' record for PatientId: {PatientId}. Updating fields if provided...", patientId);
+
+                if (data.ConsentToEmail.HasValue) other.ConsentToEmail = data.ConsentToEmail.Value;
+                if (data.ConsentToMessage.HasValue) other.ConsentToMessage = data.ConsentToMessage.Value;
+                if (data.SoberLivingHomeId.HasValue) other.SoberLivingHomeId = data.SoberLivingHomeId.Value;
+                if (!string.IsNullOrEmpty(data.PracticeLocation)) other.PracticeLocation = data.PracticeLocation;
+                if (data.RegistrationDate.HasValue)
+                    other.RegistrationDate = data.RegistrationDate.Value.Kind == DateTimeKind.Utc
+                        ? data.RegistrationDate.Value
+                        : data.RegistrationDate.Value.ToUniversalTime();
+
+                if (data.Source.HasValue)
+                {
+                    other.Source = (NuLogicEHR.Enums.Source)data.Source.Value;
+
+                    _logger.LogInformation("Updated source to {Source} for PatientId: {PatientId}", data.Source.Value, patientId);
+
+                    // If source is WalkIn (0), clear SoberLivingHome fields
+                    if (data.Source.Value == 0)
+                    {
+                        other.SoberLivingHomeId = null;
+                        other.SoberLivingHomeName = null;
+                        _logger.LogInformation("Cleared SoberLivingHome details since Source is WalkIn for PatientId: {PatientId}", patientId);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(data.SoberLivingHomeName))
+                    other.SoberLivingHomeName = data.SoberLivingHomeName;
+
+                other.ModifiedBy = DateTime.UtcNow;
+                context.OtherInformation.Update(other);
+
+                _logger.LogInformation("Successfully updated 'OtherInformation' for PatientId: {PatientId}", patientId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating 'OtherInformation' for PatientId: {PatientId}", patientId);
                 throw;
             }
         }

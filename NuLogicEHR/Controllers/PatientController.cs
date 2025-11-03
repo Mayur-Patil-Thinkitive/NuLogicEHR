@@ -335,5 +335,49 @@ namespace NuLogicEHR.Controllers
                 return StatusCode(500, new { Message = ex.Message, StatusCode = 500 });
             }
         }
+
+        [HttpPut("Update-Patient/{patientId}")]
+        public async Task<IActionResult> UpdatePatient(int patientId, [FromBody] PatientUpdateViewModel request)
+        {
+            if (!TryGetTenantId(out var tenantId))
+                return BadRequest(new { Message = "TenantId header is required", StatusCode = 400 });
+
+            if (!ModelState.IsValid)
+                return BadRequest(new { Message = "Validation failed", Errors = ModelState, StatusCode = 400 });
+
+            if (patientId <= 0)
+                return BadRequest(new { Message = "Valid PatientId is required", StatusCode = 400 });
+
+            // Set PatientId from route parameter
+            request.PatientId = patientId;
+
+            try
+            {
+                var success = await _patientService.UpdatePatientAsync(tenantId, request);
+                if (success)
+                {
+                    _logger.LogInformation("Patient {PatientId} updated successfully for Tenant {TenantId}", request.PatientId, tenantId);
+                    return Ok(new
+                    {
+                        Data = new { PatientId = request.PatientId },
+                        Message = "Patient updated successfully",
+                        StatusCode = 200
+                    });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Failed to update patient", StatusCode = 500 });
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { Message = ex.Message, StatusCode = 404 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating patient {PatientId} for Tenant {TenantId}", request.PatientId, tenantId);
+                return StatusCode(500, new { Message = $"Internal server error: {ex.Message}", StatusCode = 500 });
+            }
+        }
     }
 }
