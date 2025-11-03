@@ -6,38 +6,55 @@ using NuLogicEHR.Enums;
 using NuLogicEHR.Models;
 using NuLogicEHR.Repository;
 using NuLogicEHR.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace NuLogicEHR.Services
 {
     public class SettingService : BaseService
     {
-        public SettingService(TenantService tenantService, DbContextFactory dbContextFactory)
+        private readonly ILogger<SettingService> _logger;
+
+        public SettingService(TenantService tenantService, DbContextFactory dbContextFactory, ILogger<SettingService> logger)
             : base(tenantService, dbContextFactory)
         {
+            _logger = logger;
         }
 
         public async Task<int> CreateProviderAsync(int tenantId, Provider provider)
         {
+            _logger.LogInformation("Starting CreateProviderAsync for TenantId: {TenantId}, Provider: {ProviderName}", tenantId, provider?.FirstName ?? "Unknown");
+
             try
             {
                 if (provider.KioskAccess == true && !provider.KioskPin.HasValue)
                 {
+                    _logger.LogWarning("Provider creation failed: KioskAccess is enabled but KioskPin is missing for TenantId: {TenantId}", tenantId);
                     throw new CustomValidationException("4-digit PIN is required when Kiosk Access is enabled");
                 }
 
                 using var context = await GetContextAsync(tenantId);
+                _logger.LogInformation("Database context created successfully for TenantId: {TenantId}", tenantId);
+
                 var repository = new SettingRepository(context);
-                return await repository.CreateAsync(provider);
+                _logger.LogInformation("Creating provider record in repository for TenantId: {TenantId}", tenantId);
+
+                var result = await repository.CreateAsync(provider);
+
+                _logger.LogInformation("Successfully created provider (Id: {ProviderId}) for TenantId: {TenantId}", result, tenantId);
+                return result;
             }
-            catch (CustomValidationException)
+            catch (CustomValidationException ex)
             {
+                _logger.LogWarning(ex, "Validation error while creating provider for TenantId: {TenantId}", tenantId);
                 throw;
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unexpected error occurred while creating provider for TenantId: {TenantId}", tenantId);
                 throw new ApplicationException("An error occurred while creating the provider.", ex);
             }
         }
+
         public async Task<IEnumerable<Provider>> GetAllProvidersAsync(int tenantId)
         {
             try
